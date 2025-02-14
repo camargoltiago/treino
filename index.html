@@ -8,276 +8,61 @@
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 
-  <!-- Meta tags para PWA -->
-  <meta name="theme-color" content="#007bff">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Estilos Locais -->
+  <link rel="stylesheet" href="css/styles.css">
 
-  <!-- Manifesto Inline -->
-  <link rel="manifest" href="data:application/json;charset=utf-8;base64,eyJzaG9ydF9uYW1lIjoiVHJlaW5vIiwibmFtZSI6IlBsYW5vIGRlIFRyZWlubyIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3BuZztiYXNlNjQsUEVOVEFHTkVTU0dCUkFDRSIsInR5cGUiOiJpbWFnZS9wbmciLCJzaXplcyI6IjE5MngxOTIifSx7InNyYyI6ImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxQRU5UQUdORVNTSU9OU0dCUkFDRSIsInR5cGUiOiJpbWFnZS9wbmciLCJzaXplcyI6IjUxMng1MTIifV0sInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZmZmZmZmIiwidGhlbWVfY29sb3IiOiIjMDA3YmZmIn0=">
+  <!-- Manifest PWA -->
+  <link rel="manifest" href="manifest.json">
 
-  <style>
-    body {
-      background-color: #f8f9fa;
-    }
-    .treino-header {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .card {
-      margin-bottom: 15px;
-      transition: transform 0.3s ease;
-    }
-    .card.completed {
-      background-color: #d4edda;
-      border-color: #c3e6cb;
-      text-decoration: line-through;
-    }
-    .card:hover {
-      transform: scale(1.02);
-    }
-    button {
-      display: block;
-      margin: 20px auto;
-    }
-  </style>
+  <!-- Ícone da Página -->
+  <link rel="icon" href="icons/icon-192x192.png" type="image/png">
+
+  <!-- Configuração PWA -->
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Plano de Treino - Gerencie seus treinos e exercícios de forma fácil.">
 </head>
 <body>
-  <div class="container mt-2">
-
-    <!-- Treino A -->
-    <div id="treinoA">
-      <h2 class="treino-header">Treino A - Peito e Tríceps</h2>
-      <div class="row">
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoA-1" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Supino Reto (Barra ou Halteres)</h5>
-              <p class="card-text"><strong>Séries:</strong> 4 | <strong>Repetições:</strong> 8-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoA-2" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Supino Inclinado (Barra ou Halteres)</h5>
-              <p class="card-text"><strong>Séries:</strong> 4 | <strong>Repetições:</strong> 8-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoA-3" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Crucifixo Inclinado com Halteres</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 10-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoA-4" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Tríceps Testa (Barra ou Halteres)</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 10-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoA-5" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Tríceps Corda ou Coice</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 12-15</p>
-            </div>
-          </div>
-        </div>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="index.html">Visualizar Treinos</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="cadastro.html">Cadastrar Treinos</a>
+          </li>
+        </ul>
       </div>
     </div>
+  </nav>
 
-    <!-- Treino B -->
-    <div id="treinoB">
-      <h2 class="treino-header">Treino B - Costas e Bíceps</h2>
-      <div class="row">
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoB-1" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Puxada Alta na Polia (Supinada/Neutra)</h5>
-              <p class="card-text"><strong>Séries:</strong> 4 | <strong>Repetições:</strong> 8-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoB-2" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Remada Curvada (Barra ou Halteres)</h5>
-              <p class="card-text"><strong>Séries:</strong> 4 | <strong>Repetições:</strong> 8-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoB-3" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Pulldown na Máquina (Aberta/Fechada)</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 10-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoB-4" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Rosca Direta (Barra ou Halteres)</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 10-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoB-5" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Martelo com Halteres</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 12-15</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Treino C -->
-    <div id="treinoC">
-      <h2 class="treino-header">Treino C - Pernas e Glúteos</h2>
-      <div class="row">
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoC-1" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Agachamento Livre ou Smith Machine</h5>
-              <p class="card-text"><strong>Séries:</strong> 4 | <strong>Repetições:</strong> 8-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoC-2" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Leg Press 45°</h5>
-              <p class="card-text"><strong>Séries:</strong> 4 | <strong>Repetições:</strong> 10-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoC-3" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Afundo com Halteres ou Barra</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 10-12 (por perna)</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoC-4" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Extensão de Perna (Quadríceps)</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 12-15</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoC-5" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Flexão de Perna (Posterior de Coxa)</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 12-15</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Treino D -->
-    <div id="treinoD">
-      <h2 class="treino-header">Treino D - Ombro, Trapézio e Abdominais</h2>
-      <div class="row">
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoD-1" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Desenvolvimento Militar com Barra/Halteres</h5>
-              <p class="card-text"><strong>Séries:</strong> 4 | <strong>Repetições:</strong> 8-12</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoD-2" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Elevação Lateral com Halteres</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 12-15</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoD-3" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Encolhimento de Ombros com Barra/Halteres</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 12-15</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoD-4" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Prancha Abdominal</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> -</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div data-id="treinoD-5" onclick="toggleCompleted(this)" class="card">
-            <div class="card-body">
-              <h5 class="card-title">Abdominal Oblíquo com Rotação</h5>
-              <p class="card-text"><strong>Séries:</strong> 3 | <strong>Repetições:</strong> 15-20 (por lado)</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <div class="container mt-5" style="margin-top: 80px;">
+    <h1 class="text-center mb-4">Plano de Treino</h1>
+    <div id="treino-list"></div>
     <button class="btn btn-primary" onclick="resetAll()">Resetar Todos os Treinos</button>
   </div>
 
-  <script>
-    // Função para marcar/desmarcar exercícios concluídos e salvar no localStorage
-    function toggleCompleted(card) {
-      const id = card.getAttribute('data-id');
-      card.classList.toggle('completed');
-
-      // Salva o estado no localStorage
-      let completedExercises = JSON.parse(localStorage.getItem('completedExercises')) || {};
-      if (card.classList.contains('completed')) {
-        completedExercises[id] = true;
-      } else {
-        delete completedExercises[id];
-      }
-      localStorage.setItem('completedExercises', JSON.stringify(completedExercises));
-    }
-
-    // Função para carregar o estado salvo no localStorage
-    function loadCompletedExercises() {
-      const completedExercises = JSON.parse(localStorage.getItem('completedExercises')) || {};
-      for (const id in completedExercises) {
-        const card = document.querySelector(`[data-id="${id}"]`);
-        if (card) {
-          card.classList.add('completed');
-        }
-      }
-    }
-
-    // Função para resetar todos os treinos e limpar o localStorage
-    function resetAll() {
-      const cards = document.querySelectorAll('.card');
-      cards.forEach(card => {
-        card.classList.remove('completed');
-      });
-      localStorage.removeItem('completedExercises');
-    }
-
-    // Carrega o estado ao iniciar a página
-    window.onload = loadCompletedExercises;
-  </script>
-
-  <!-- Bootstrap JS (opcional, se precisar de funcionalidades JavaScript) -->
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/main.js" defer></script>
+  <script>
+    // Registra o Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('js/service-worker.js')
+          .then(registration => {
+            console.log('Service Worker registrado com sucesso:', registration);
+          })
+          .catch(error => {
+            console.log('Falha ao registrar o Service Worker:', error);
+          });
+      });
+    }
+  </script>
 </body>
 </html>

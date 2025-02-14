@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Treinos</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Estilos Locais -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Manifest PWA -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Ícone da Página -->
+  <link rel="icon" href="icons/icon-192x192.png" type="image/png">
+
+  <!-- Configuração PWA -->
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Cadastro de Treinos - Gerencie seus treinos e exercícios de forma fácil.">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="index.html">Visualizar Treinos</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="cadastro.html">Cadastrar Treinos</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-5" style="margin-top: 80px;">
+    <h1 class="text-center mb-4">Cadastro de Treinos</h1>
+    <div class="text-center mb-4">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTreinoModal">Adicionar Treino</button>
+    </div>
+    <div id="treino-list" class="row"></div>
+  </div>
+
+  <!-- Modal para Adicionar Treino -->
+  <div class="modal fade" id="addTreinoModal" tabindex="-1" aria-labelledby="addTreinoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addTreinoModalLabel">Adicionar Treino</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label for="treino-name" class="form-label">Nome do Treino:</label>
+          <input type="text" class="form-control" id="treino-name" placeholder="Ex: Peito e Tríceps">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="addTreino()">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Adicionar Exercício -->
+  <div class="modal fade" id="addExerciseModal" tabindex="-1" aria-labelledby="addExerciseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addExerciseModalLabel">Adicionar/Visualizar Exercícios</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="exercise-list"></div>
+          <hr>
+          <h6>Adicionar Exercício</h6>
+          <label for="exercise-name" class="form-label">Nome do Exercício:</label>
+          <input type="text" class="form-control mb-2" id="exercise-name" placeholder="Ex: Supino Reto">
+          <label for="exercise-description" class="form-label">Descrição:</label>
+          <textarea class="form-control mb-2" id="exercise-description" rows="3" placeholder="Ex: 4 séries de 8-12 repetições"></textarea>
+          <label for="exercise-series" class="form-label">Séries:</label>
+          <input type="number" class="form-control mb-2" id="exercise-series" placeholder="Ex: 4">
+          <label for="exercise-reps" class="form-label">Repetições:</label>
+          <input type="text" class="form-control" id="exercise-reps" placeholder="Ex: 8-12">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="addExercise()">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/cadastro.js" defer></script>
+</body>
+</html>
