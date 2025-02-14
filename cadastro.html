@@ -4,50 +4,143 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cadastro de Treinos</title>
-
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-
   <!-- Estilos Locais -->
   <link rel="stylesheet" href="css/styles.css">
-
   <!-- Manifest PWA -->
   <link rel="manifest" href="manifest.json">
-
   <!-- Ícone da Página -->
   <link rel="icon" href="icons/icon-192x192.png" type="image/png">
-
   <!-- Configuração PWA -->
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Cadastro de Treinos - Gerencie seus treinos e exercícios de forma fácil.">
+  <style>
+    /* Estilo para o header */
+    header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background-color: #ffffff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 10px 15px;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      margin: 0;
+      text-align: center;
+      flex-grow: 1;
+    }
+
+    header button {
+      margin-left: auto; /* Alinha o botão à direita */
+    }
+
+    /* Ajuste no container principal para evitar sobreposição com o header */
+    .container {
+      margin-top: 80px; /* Espaço para o header */
+      margin-bottom: 80px; /* Espaço para o footer */
+    }
+
+    /* Estilo para o footer */
+    footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #f8f9fa;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+      padding: 10px 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    footer a {
+      text-decoration: none;
+      color: #007bff;
+      font-size: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    footer a.active {
+      color: #0d6efd;
+      font-weight: bold;
+    }
+
+    footer a i {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+/* Estilo personalizado para o toast */
+.toast-container {
+  display: flex;
+  justify-content: center; /* Centraliza horizontalmente */
+  align-items: flex-end; /* Alinha na parte inferior */
+  width: 100%; /* Garante que o contêiner ocupe toda a largura */
+  height: 100vh; /* Altura total da viewport */
+  pointer-events: none; /* Permite cliques através do contêiner */
+}
+
+.custom-toast {
+  background-color: #d4edda; /* Fundo verde claro */
+  color: #155724; /* Texto verde escuro */
+  border: 1px solid #c3e6cb; /* Borda verde clara */
+  border-radius: 8px; /* Bordas arredondadas */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  max-width: 350px; /* Largura máxima */
+  overflow: hidden; /* Evita que o conteúdo transborde */
+  pointer-events: auto; /* Habilita interações no toast */
+}
+
+.custom-toast .toast-content {
+  padding: 1rem; /* Espaçamento interno */
+}
+
+.custom-toast .toast-icon {
+  flex-shrink: 0; /* Impede que o ícone encolha */
+}
+
+.custom-toast .toast-body {
+  font-size: 1rem; /* Tamanho da fonte */
+  line-height: 1.5; /* Espaçamento entre linhas */
+  margin-bottom: 0; /* Remove margem inferior */
+}
+
+.hide {
+  display: none; /* Oculta o toast inicialmente */
+}
+  </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top mb-5">
-    <div class="container-fluid">
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <a class="nav-link" href="index.html">Visualizar Treinos</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="cadastro.html">Cadastrar Treinos</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
+  <!-- Header -->
+  <header>
+    <h1 class="text-center">Cadastro de Treinos</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTreinoModal">Adicionar Treino</button>
+  </header>
 
-  <div class="container mt-5">
-    <h1 class="text-center mb-4 mt-5 pt-3">Cadastro de Treinos</h1>
-    <div class="text-center mb-4">
-      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTreinoModal">Adicionar Treino</button>
-    </div>
+  <!-- Conteúdo Principal -->
+  <div class="container">
     <div id="treino-list" class="row"></div>
   </div>
+
+  <!-- Footer -->
+  <footer>
+    <a href="index.html">
+      <i class="bi bi-file-earmark-text"></i>
+    </a>
+    <a href="cadastro.html" class="active">
+      <i class="bi bi-plus-circle"></i>
+    </a>
+  </footer>
 
   <!-- Modal para Adicionar Treino -->
   <div class="modal fade" id="addTreinoModal" tabindex="-1" aria-labelledby="addTreinoModalLabel" aria-hidden="true">
@@ -62,7 +155,7 @@
           <input type="text" class="form-control" id="treino-name" placeholder="Ex: Peito e Tríceps">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
           <button type="button" class="btn btn-primary" onclick="addTreino()">Salvar</button>
         </div>
       </div>
@@ -79,7 +172,7 @@
         </div>
         <div class="modal-body">
           <div id="exercise-list"></div>
-          <hr>
+        
           <h6>Adicionar Exercício</h6>
           <label for="exercise-name" class="form-label">Nome do Exercício:</label>
           <input type="text" class="form-control mb-2" id="exercise-name" placeholder="Ex: Supino Reto">
@@ -91,15 +184,66 @@
           <input type="text" class="form-control" id="exercise-reps" placeholder="Ex: 8-12">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
           <button type="button" class="btn btn-primary" onclick="addExercise()">Salvar</button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Modal de Confirmação -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-top">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmModalLabel">Confirmar Remoção</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Tem certeza que deseja remover este treino?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger" id="confirmRemove">Remover</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Toast de Sucesso -->
+<div class="toast-container position-fixed bottom-0 p-3">
+  <div id="successToast" class="custom-toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-content d-flex align-items-center">
+      <!-- Ícone de Sucesso -->
+      <div class="toast-icon me-3">
+        <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
+      </div>
+      <!-- Corpo do Toast -->
+      <div class="toast-body flex-grow-1">
+        Treino removido com sucesso!
+      </div>
+    </div>
+  </div>
+</div>
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/cadastro.js" defer></script>
+  <script>
+    // Registra o Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('js/service-worker.js')
+          .then(registration => {
+            console.log('Service Worker registrado com sucesso:', registration);
+          })
+          .catch(error => {
+            console.log('Falha ao registrar o Service Worker:', error);
+          });
+      });
+    }
+  </script>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 </body>
 </html>

@@ -6,45 +6,93 @@ const treinos = JSON.parse(localStorage.getItem('treinos')) || [];
 function renderTreinos() {
   const treinoList = document.getElementById('treino-list');
   treinoList.innerHTML = ''; // Limpa a lista
-
   treinos.forEach((treino, index) => {
     const col = document.createElement('div');
     col.className = 'col-md-6 col-lg-4 mb-4';
-
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'card h-100'; // Altura uniforme para todas as cards
     card.onclick = () => openTreino(index);
-
     const cardBody = document.createElement('div');
-    cardBody.className = 'card-body';
-
+    cardBody.className =
+      'card-body d-flex justify-content-between align-items-center'; // Flexbox para alinhar elementos
     const title = document.createElement('h5');
-    title.className = 'card-title';
+    title.className = 'card-title mb-0'; // Remove margem inferior para evitar espaçamento desnecessário
     title.textContent = treino.nome;
 
     // Botão de remoção
-    const buttons = document.createElement('div');
-    buttons.innerHTML = `
-      <span class="btn-remove" onclick="removeTreino(${index}, event)">Remover</span>
-    `;
+    const removeButton = document.createElement('button');
+    removeButton.className = 'btn btn-danger btn-sm'; // Estilo de botão vermelho pequeno
+    removeButton.innerHTML = `<i class="bi bi-trash"></i>`; // Ícone de lixeira
+    removeButton.onclick = (event) => {
+      event.stopPropagation(); // Evita que o clique no botão abra o modal
+      showConfirmModal(index); // Mostra o modal de confirmação
+    };
 
+    // Adiciona os elementos ao corpo do card
     cardBody.appendChild(title);
-    cardBody.appendChild(buttons);
+    cardBody.appendChild(removeButton);
     card.appendChild(cardBody);
     col.appendChild(card);
     treinoList.appendChild(col);
   });
 }
 
+// Função para mostrar o modal de confirmação
+function showConfirmModal(index) {
+  // Armazena o índice do treino a ser removido
+  const confirmModal = new bootstrap.Modal(
+    document.getElementById('confirmModal')
+  );
+  document.getElementById('confirmRemove').onclick = () => {
+    removeTreino(index); // Remove o treino após confirmação
+    confirmModal.hide(); // Fecha o modal
+  };
+  confirmModal.show();
+}
+
+// Função para remover um treino
+// Função para remover um treino
+function removeTreino(index) {
+  treinos.splice(index, 1);
+  localStorage.setItem('treinos', JSON.stringify(treinos));
+  renderTreinos();
+
+  // Exibe o toast de sucesso
+  const successToast = new bootstrap.Toast(
+    document.getElementById('successToast'),
+    {
+      delay: 1000, // Duração de exibição (1.5 segundos)
+      animation: true, // Ativa animações
+    }
+  );
+
+  // Remove a classe 'hide' antes de mostrar o toast
+  document.getElementById('successToast').classList.remove('hide');
+
+  // Mostra o toast
+  successToast.show();
+
+  // Fecha o modal de confirmação
+  const confirmModal = bootstrap.Modal.getInstance(
+    document.getElementById('confirmModal')
+  );
+  confirmModal.hide();
+}
+
+// Adiciona um ouvinte de evento para ocultar o toast após ser fechado
+document
+  .getElementById('successToast')
+  .addEventListener('hidden.bs.toast', function () {
+    this.classList.add('hide'); // Adiciona a classe 'hide' novamente
+  });
+
 // Função para abrir um treino específico
 function openTreino(index) {
   currentTreinoId = index;
-
   const modal = new bootstrap.Modal(
     document.getElementById('addExerciseModal')
   );
   modal.show();
-
   // Renderiza os exercícios do treino
   updateExerciseList(treinos[index]);
 }
@@ -55,29 +103,31 @@ function updateExerciseList(treino) {
   if (!exerciseList) return;
 
   exerciseList.innerHTML = `
-${
-  treino.exercicios.length > 0
-    ? `
-  <div class="list-group">
-    ${treino.exercicios
-      .map(
-        (exercicio, idx) => `
-      <div class="list-group-item exercise-card">
-        <div>
-          <h6>${exercicio.nome}</h6>
-          <p><strong>Descrição:</strong> ${exercicio.descricao}</p>
-          <p><strong>Séries:</strong> ${exercicio.series} | <strong>Repetições:</strong> ${exercicio.reps}</p>
-        </div>
-        <span class="btn-remove" onclick="removeExercise(${currentTreinoId}, ${idx})">Remover</span>
-      </div>
-    `
-      )
-      .join('')}
-  </div>
-`
-    : '<p>Nenhum exercício adicionado ainda.</p>'
-}
-`;
+    ${
+      treino.exercicios.length > 0
+        ? `
+          <div class="list-group">
+            ${treino.exercicios
+              .map(
+                (exercicio, idx) => `
+                  <div class="list-group-item exercise-card d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h6 class="mb-1">${exercicio.nome}</h6>
+                      <p class="mb-0"><strong>Descrição:</strong> ${exercicio.descricao}</p>
+                      <p class="mb-0"><strong>Séries:</strong> ${exercicio.series} | <strong>Repetições:</strong> ${exercicio.reps}</p>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="removeExercise(${currentTreinoId}, ${idx})">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                `
+              )
+              .join('')}
+          </div>
+        `
+        : '<p class="text-center text-muted">Nenhum exercício adicionado ainda.</p>'
+    }
+  `;
 }
 
 // Função para adicionar um novo treino
@@ -87,29 +137,16 @@ function addTreino() {
     alert('Por favor, insira um nome para o treino.');
     return;
   }
-
   treinos.push({ nome: treinoName, exercicios: [] });
   localStorage.setItem('treinos', JSON.stringify(treinos));
   renderTreinos();
-
   // Fecha o modal
   const modal = bootstrap.Modal.getInstance(
     document.getElementById('addTreinoModal')
   );
   modal.hide();
-
   // Limpa o campo de nome
   document.getElementById('treino-name').value = '';
-}
-
-// Função para remover um treino
-function removeTreino(index, event) {
-  event.stopPropagation(); // Impede que o card abra o modal de exercícios
-  if (confirm('Tem certeza que deseja remover este treino?')) {
-    treinos.splice(index, 1);
-    localStorage.setItem('treinos', JSON.stringify(treinos));
-    renderTreinos();
-  }
 }
 
 // Função para adicionar um exercício ao treino selecionado
@@ -120,22 +157,18 @@ function addExercise() {
     .value.trim();
   const series = document.getElementById('exercise-series').value.trim();
   const reps = document.getElementById('exercise-reps').value.trim();
-
   if (!nome || !descricao || !series || !reps) {
     alert('Preencha todos os campos.');
     return;
   }
-
   treinos[currentTreinoId].exercicios.push({
     nome,
     descricao,
     series: parseInt(series),
     reps,
   });
-
   localStorage.setItem('treinos', JSON.stringify(treinos));
   updateExerciseList(treinos[currentTreinoId]);
-
   // Limpa os campos do formulário
   document.getElementById('exercise-name').value = '';
   document.getElementById('exercise-description').value = '';
@@ -145,11 +178,9 @@ function addExercise() {
 
 // Função para remover um exercício
 function removeExercise(treinoId, exerciseId) {
-  if (confirm('Tem certeza que deseja remover este exercício?')) {
-    treinos[treinoId].exercicios.splice(exerciseId, 1);
-    localStorage.setItem('treinos', JSON.stringify(treinos));
-    updateExerciseList(treinos[treinoId]);
-  }
+  treinos[treinoId].exercicios.splice(exerciseId, 1);
+  localStorage.setItem('treinos', JSON.stringify(treinos));
+  updateExerciseList(treinos[treinoId]);
 }
 
 // Inicializa a lista de treinos ao carregar a página
