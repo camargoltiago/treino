@@ -1,14 +1,14 @@
 // Cache version
 const CACHE_NAME = 'treino-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/cadastro.html',
-  '/css/styles.css',
-  '/js/main.js',
-  '/js/cadastro.js',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  './',
+  './index.html',
+  './cadastro.html',
+  './css/styles.css',
+  './js/main.js',
+  './js/cadastro.js',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png',
 ];
 
 // Instalação do Service Worker
