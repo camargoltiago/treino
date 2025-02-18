@@ -118,18 +118,57 @@
 .hide {
   display: none; /* Oculta o toast inicialmente */
 }
+
+/* Estilo para os botões FAB */
+.fab-container {
+  position: fixed;
+  bottom: 80px; /* Distância do rodapé */
+  right: 20px; /* Distância da direita */
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Espaçamento entre os botões */
+}
+
+.fab {
+  width: 56px; /* Largura do botão */
+  height: 56px; /* Altura do botão */
+  border-radius: 50%; /* Formato circular */
+  font-size: 1.5rem; /* Tamanho do ícone */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  transition: transform 0.3s ease-in-out; /* Animação de hover */
+}
+
+.fab:hover {
+  transform: scale(1.1); /* Aumenta o botão levemente ao passar o mouse */
+}
   </style>
 </head>
 <body>
   <!-- Header -->
   <header>
     <h1 class="text-center">Cadastro</h1>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTreinoModal">Adicionar Treino</button>
+    
   </header>
-
+  
   <!-- Conteúdo Principal -->
   <div class="container">
     <div id="treino-list" class="row"></div>
+  </div>
+  
+  <!-- Botões FAB -->
+  <div class="fab-container">
+    <!-- Botão para Gerar PDF -->
+    <button class="btn btn-danger fab" onclick="exportToPDF()">
+      <i class="bi bi-download"></i> <!-- Ícone de Download -->
+    </button>
+    <!-- Botão para Adicionar Treino -->
+    <button class="btn btn-primary fab" data-bs-toggle="modal" data-bs-target="#addTreinoModal">
+      <i class="bi bi-plus-lg"></i> <!-- Ícone de "+" -->
+    </button>
+  
   </div>
 
   <!-- Footer -->
@@ -227,8 +266,9 @@
 </div>
 
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/cadastro.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Registra o Service Worker
     if ('serviceWorker' in navigator) {
@@ -245,5 +285,6 @@
   </script>
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
 </body>
 </html>

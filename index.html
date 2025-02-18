@@ -78,18 +78,55 @@
       margin-top: 80px; /* Espaço para o header */
       margin-bottom: 80px; /* Espaço para o footer */
     }
+
+    /* Estilo para os botões FAB */
+.fab-container {
+  position: fixed;
+  bottom: 80px; /* Distância do rodapé */
+  right: 20px; /* Distância da direita */
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Espaçamento entre os botões */
+}
+
+.fab {
+  width: 56px; /* Largura do botão */
+  height: 56px; /* Altura do botão */
+  border-radius: 50%; /* Formato circular */
+  font-size: 1.5rem; /* Tamanho do ícone */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  transition: transform 0.3s ease-in-out; /* Animação de hover */
+}
+
+.fab:hover {
+  transform: scale(1.1); /* Aumenta o botão levemente ao passar o mouse */
+}
+
   </style>
 </head>
 <body>
   <!-- Header -->
   <header>
     <h1 class="text-center">Plano de Treino</h1>
-    <button class="btn btn-primary" onclick="resetAll()">Resetar</button>
   </header>
 
   <!-- Conteúdo Principal -->
   <div class="container">
     <div id="treino-list"></div>
+
+      <!-- Botões FAB -->
+  <div class="fab-container">
+    <!-- Botão para resetar os Treinos -->
+    <button class="btn btn-primary fab" onclick="resetAll()">
+      <i class="bi bi-arrow-clockwise"></i>
+    </button>
+  
+  </div>
+ 
+   
   </div>
 
   <!-- Footer -->

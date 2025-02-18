@@ -183,5 +183,42 @@ function removeExercise(treinoId, exerciseId) {
   updateExerciseList(treinos[treinoId]);
 }
 
+// Função para exportar os dados como PDF
+function exportToPDF() {
+  const { jsPDF } = window.jspdf; // Importa a biblioteca
+  const doc = new jsPDF();
+
+  // Título do PDF
+  doc.setFontSize(18);
+  doc.text('Meus Treinos', 10, 10);
+
+  let y = 20; // Posição vertical inicial
+  treinos.forEach((treino, index) => {
+    doc.setFontSize(14);
+    doc.text(`${index + 1}. ${treino.nome}`, 10, y);
+    y += 10;
+
+    if (treino.exercicios.length > 0) {
+      treino.exercicios.forEach((exercicio, idx) => {
+        doc.setFontSize(12);
+        doc.text(
+          `   - Exercício: ${exercicio.nome} | Descrição: ${exercicio.descricao} | Séries: ${exercicio.series} | Repetições: ${exercicio.reps}`,
+          10,
+          y
+        );
+        y += 10;
+      });
+    } else {
+      doc.setFontSize(12);
+      doc.text('   Nenhum exercício adicionado.', 10, y);
+      y += 10;
+    }
+    y += 5; // Espaçamento entre treinos
+  });
+
+  // Salva o PDF
+  doc.save('meus_treinos.pdf');
+}
+
 // Inicializa a lista de treinos ao carregar a página
 window.onload = renderTreinos;
