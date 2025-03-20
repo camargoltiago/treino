@@ -152,13 +152,13 @@ function addTreino() {
 // Função para adicionar um exercício ao treino selecionado
 function addExercise() {
   const nome = document.getElementById('exercise-name').value.trim();
-  const descricao = document
-    .getElementById('exercise-description')
-    .value.trim();
+  const descricao =
+    document.getElementById('exercise-description').value.trim() || '-';
+
   const series = document.getElementById('exercise-series').value.trim();
   const reps = document.getElementById('exercise-reps').value.trim();
-  if (!nome || !descricao || !series || !reps) {
-    alert('Preencha todos os campos.');
+  if (!nome || !series || !reps) {
+    alert('Preencha todos os campos obrigatórios.');
     return;
   }
   treinos[currentTreinoId].exercicios.push({
@@ -184,40 +184,84 @@ function removeExercise(treinoId, exerciseId) {
 }
 
 // Função para exportar os dados como PDF
+// Função para exportar os dados como PDF
 function exportToPDF() {
   const { jsPDF } = window.jspdf; // Importa a biblioteca
   const doc = new jsPDF();
 
+  // Configurações iniciais
+  let y = 20; // Posição vertical inicial
+  const pageHeight = doc.internal.pageSize.height - 10; // Altura máxima da página (com margem)
+
   // Título do PDF
   doc.setFontSize(18);
-  doc.text('Meus Treinos', 10, 10);
+  doc.text('Meus Treinos', 10, y);
+  y += 15; // Espaçamento após o título
 
-  let y = 20; // Posição vertical inicial
   treinos.forEach((treino, index) => {
+    // Nome do treino
     doc.setFontSize(14);
     doc.text(`${index + 1}. ${treino.nome}`, 10, y);
     y += 10;
 
     if (treino.exercicios.length > 0) {
       treino.exercicios.forEach((exercicio, idx) => {
+        // Verifica se há espaço suficiente na página atual
+        if (y >= pageHeight) {
+          doc.addPage(); // Adiciona uma nova página
+          y = 20; // Reseta a posição vertical
+        }
+
+        // Exercício
+        doc.setFontSize(12);
+        doc.text(`- Exercício: ${exercicio.nome}`, 15, y);
+        y += 6;
+
+        // Descrição
+        doc.setFontSize(10); // Tamanho menor para a descrição
+        doc.text(`Descrição: ${exercicio.descricao}`, 15, y);
+        y += 6;
+
+        // Séries e Repetições
         doc.setFontSize(12);
         doc.text(
-          `   - Exercício: ${exercicio.nome} | Descrição: ${exercicio.descricao} | Séries: ${exercicio.series} | Repetições: ${exercicio.reps}`,
-          10,
+          `Séries: ${exercicio.series} | Repetições: ${exercicio.reps}`,
+          15,
           y
         );
         y += 10;
       });
     } else {
+      // Nenhum exercício adicionado
       doc.setFontSize(12);
-      doc.text('   Nenhum exercício adicionado.', 10, y);
+      doc.text('Nenhum exercício adicionado.', 15, y);
       y += 10;
     }
-    y += 5; // Espaçamento entre treinos
+
+    // Espaçamento entre treinos
+    y += 5;
+
+    // Verifica se há espaço suficiente para o próximo treino
+    if (y >= pageHeight) {
+      doc.addPage(); // Adiciona uma nova página
+      y = 20; // Reseta a posição vertical
+    }
   });
 
   // Salva o PDF
-  doc.save('meus_treinos.pdf');
+  // Gera o nome do arquivo com a data e hora atual
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Mês com dois dígitos
+  const day = String(now.getDate()).padStart(2, '0'); // Dia com dois dígitos
+  const hours = String(now.getHours()).padStart(2, '0'); // Hora com dois dígitos
+  const minutes = String(now.getMinutes()).padStart(2, '0'); // Minutos com dois dígitos
+  const seconds = String(now.getSeconds()).padStart(2, '0'); // Segundos com dois dígitos
+
+  const fileName = `treino_${year}-${month}-${day}_${hours}-${minutes}-${seconds}.pdf`;
+
+  // Salva o PDF com o nome gerado
+  doc.save(fileName);
 }
 
 // Inicializa a lista de treinos ao carregar a página
