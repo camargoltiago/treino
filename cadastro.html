@@ -80,6 +80,20 @@
       margin-bottom: 5px;
     }
 
+    /* Estilo para o card durante o drag-and-drop */
+.card.dragging {
+  opacity: 0.5; /* Diminui a opacidade */
+  transform: scale(1.05); /* Aumenta levemente o tamanho */
+  transition: all 0.2s ease-in-out; /* Transição suave */
+}
+
+/* Estilo para o ghost element (elemento fantasma) */
+.sortable-ghost {
+  opacity: 0.3; /* Diminui a opacidade do elemento fantasma */
+  background-color: #f8f9fa; /* Fundo claro */
+  border: 1px dashed #0d6efd; /* Borda tracejada azul */
+}
+
 /* Estilo personalizado para o toast */
 .toast-container {
   display: flex;
@@ -123,9 +137,9 @@
 .fab-container {
   position: fixed;
   bottom: 80px; /* Distância do rodapé */
-  right: 20px; /* Distância da direita */
+  left: 90%; /* Centraliza horizontalmente */
+  transform: translateX(-50%); /* Ajusta para centralizar */
   display: flex;
-  flex-direction: column;
   gap: 15px; /* Espaçamento entre os botões */
 }
 
@@ -144,6 +158,26 @@
 .fab:hover {
   transform: scale(1.1); /* Aumenta o botão levemente ao passar o mouse */
 }
+
+/* Estilo para o menu expansível */
+.fab-options {
+  position: absolute;
+  bottom: 80px; /* Mesma posição vertical dos botões */
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.fab-options.hide {
+  display: none; /* Oculta os sub-botões inicialmente */
+}
+/* Efeito de rotação para o ícone do botão principal */
+#fab-menu i {
+  transition: transform 0.3s ease-in-out;
+}
+#fab-menu.active i {
+  transform: rotate(90deg); /* Gira o ícone em 90 graus */
+}
   </style>
 </head>
 <body>
@@ -158,17 +192,31 @@
     <div id="treino-list" class="row"></div>
   </div>
   
-  <!-- Botões FAB -->
   <div class="fab-container">
-    <!-- Botão para Gerar PDF -->
-    <button class="btn btn-danger fab" onclick="exportToPDF()">
-      <i class="bi bi-download"></i> <!-- Ícone de Download -->
+    <!-- Botão Principal -->
+    <button id="fab-menu" class="btn btn-primary fab">
+      <i class="bi bi-list"></i> <!-- Ícone de menu -->
     </button>
-    <!-- Botão para Adicionar Treino -->
-    <button class="btn btn-primary fab" data-bs-toggle="modal" data-bs-target="#addTreinoModal">
-      <i class="bi bi-plus-lg"></i> <!-- Ícone de "+" -->
-    </button>
-  
+    <!-- Sub-botões Expansíveis -->
+    <div id="fab-options" class="fab-options hide">
+      <!-- Botão para Exportar JSON -->
+      <button class="btn btn-secondary fab" onclick="exportToJSON()">
+        <i class="bi bi-file-earmark-arrow-down"></i> <!-- Ícone de download -->
+      </button>
+      <!-- Botão para Importar JSON -->
+      <label class="btn btn-warning fab">
+        <i class="bi bi-file-earmark-arrow-up"></i> <!-- Ícone de upload -->
+        <input type="file" accept=".json" style="display: none;" onchange="importFromJSON(event)" />
+      </label>
+      <!-- Botão para Gerar PDF -->
+      <button class="btn btn-danger fab" onclick="exportToPDF()">
+        <i class="bi bi-download"></i> <!-- Ícone de Download -->
+      </button>
+      <!-- Botão para Adicionar Treino -->
+      <button class="btn btn-success fab" data-bs-toggle="modal" data-bs-target="#addTreinoModal">
+        <i class="bi bi-plus-lg"></i> <!-- Ícone de "+" -->
+      </button>
+    </div>
   </div>
 
   <!-- Footer -->
@@ -269,6 +317,7 @@
   <script src="js/cadastro.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.26/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Registra o Service Worker

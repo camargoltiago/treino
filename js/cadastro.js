@@ -280,5 +280,124 @@ function exportToPDF() {
   doc.save(fileName);
 }
 
+// Função para inicializar o drag-and-drop
+// Função para inicializar o drag-and-drop
+function initDragAndDrop() {
+  const treinoList = document.getElementById('treino-list');
+
+  // Destruir instâncias anteriores do SortableJS (se existirem)
+  if (treinoList.sortableInstance) {
+    treinoList.sortableInstance.destroy();
+  }
+
+  // Inicializa o SortableJS
+  treinoList.sortableInstance = new Sortable(treinoList, {
+    animation: 150, // Animação suave ao mover
+    handle: '.card', // Permite arrastar apenas pelo card inteiro
+    direction: 'vertical',
+    onEnd: (event) => {
+      // Atualiza a ordem dos treinos no array
+      const { oldIndex, newIndex } = event;
+      const movedTreino = treinos.splice(oldIndex, 1)[0]; // Remove o treino da posição antiga
+      treinos.splice(newIndex, 0, movedTreino); // Insere o treino na nova posição
+
+      // Salva a nova ordem no localStorage
+      localStorage.setItem('treinos', JSON.stringify(treinos));
+
+      // Renderiza a lista novamente para garantir consistência
+      renderTreinos();
+    },
+  });
+}
+
+// Função para renderizar a lista de treinos
+// Função para renderizar a lista de treinos
+function renderTreinos() {
+  const treinoList = document.getElementById('treino-list');
+  treinoList.innerHTML = ''; // Limpa a lista
+
+  treinos.forEach((treino, index) => {
+    const col = document.createElement('div');
+    col.className = 'col-md-6 col-lg-4 mb-4';
+    const card = document.createElement('div');
+    card.className = 'card h-100'; // Altura uniforme para todas as cards
+    card.onclick = () => openTreino(index);
+    const cardBody = document.createElement('div');
+    cardBody.className =
+      'card-body d-flex justify-content-between align-items-center'; // Flexbox para alinhar elementos
+    const title = document.createElement('h5');
+    title.className = 'card-title mb-0'; // Remove margem inferior para evitar espaçamento desnecessário
+    title.textContent = treino.nome;
+
+    // Botão de remoção
+    const removeButton = document.createElement('button');
+    removeButton.className = 'btn btn-danger btn-sm'; // Estilo de botão vermelho pequeno
+    removeButton.innerHTML = `<i class="bi bi-trash"></i>`; // Ícone de lixeira
+    removeButton.onclick = (event) => {
+      event.stopPropagation(); // Evita que o clique no botão abra o modal
+      showConfirmModal(index); // Mostra o modal de confirmação
+    };
+
+    // Adiciona os elementos ao corpo do card
+    cardBody.appendChild(title);
+    cardBody.appendChild(removeButton);
+    card.appendChild(cardBody);
+    col.appendChild(card);
+    treinoList.appendChild(col);
+  });
+
+  // Inicializa o drag-and-drop
+  initDragAndDrop();
+}
+
+// Função para alternar o menu expansível
+document.getElementById('fab-menu').addEventListener('click', () => {
+  const options = document.getElementById('fab-options');
+  options.classList.toggle('hide'); // Alterna entre mostrar e ocultar
+  document.getElementById('fab-menu').classList.toggle('active'); // Adiciona/remove classe 'active'
+});
+
+// Função para exportar os treinos como JSON
+function exportToJSON() {
+  const data = JSON.stringify(treinos, null, 2); // Formata o JSON com identação
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  // Cria um link temporário para download
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'treinos.json'; // Nome do arquivo
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url); // Libera a memória
+}
+
+// Função para importar treinos de um arquivo JSON
+function importFromJSON(event) {
+  const file = event.target.files[0]; // Obtém o arquivo selecionado
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const importedData = JSON.parse(e.target.result); // Converte o conteúdo em JSON
+      if (Array.isArray(importedData)) {
+        treinos.push(...importedData); // Adiciona os treinos importados à lista existente
+        localStorage.setItem('treinos', JSON.stringify(treinos)); // Salva no localStorage
+        renderTreinos(); // Atualiza a interface
+        alert('Treinos importados com sucesso!');
+      } else {
+        alert('O arquivo não contém uma lista válida de treinos.');
+      }
+    } catch (error) {
+      alert(
+        'Erro ao importar o arquivo. Certifique-se de que é um JSON válido.'
+      );
+    }
+  };
+  reader.readAsText(file); // Lê o conteúdo do arquivo como texto
+}
+
 // Inicializa a lista de treinos ao carregar a página
 window.onload = renderTreinos;
