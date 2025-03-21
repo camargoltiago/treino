@@ -183,58 +183,75 @@ function removeExercise(treinoId, exerciseId) {
   updateExerciseList(treinos[treinoId]);
 }
 
-// Função para exportar os dados como PDF
-// Função para exportar os dados como PDF
+// Função para exportar os dados como PDF// Função para exportar os dados como PDF
 function exportToPDF() {
   const { jsPDF } = window.jspdf; // Importa a biblioteca
   const doc = new jsPDF();
 
   // Configurações iniciais
-  let y = 20; // Posição vertical inicial
+  let y = 10; // Posição vertical inicial
   const pageHeight = doc.internal.pageSize.height - 10; // Altura máxima da página (com margem)
+  const pageWidth = doc.internal.pageSize.width; // Largura total da página
+  const margin = 10; // Margens laterais
+  const maxTableWidth = pageWidth - margin * 2; // Largura máxima da tabela
 
   // Título do PDF
   doc.setFontSize(18);
-  doc.text('Meus Treinos', 10, y);
-  y += 15; // Espaçamento após o título
+  doc.text('Treinos', margin, y);
+  y += 9; // Espaçamento após o título
 
   treinos.forEach((treino, index) => {
     // Nome do treino
     doc.setFontSize(14);
-    doc.text(`${index + 1}. ${treino.nome}`, 10, y);
-    y += 10;
+    doc.text(`${index + 1}. ${treino.nome}`, margin, y);
+    y += 5;
 
     if (treino.exercicios.length > 0) {
-      treino.exercicios.forEach((exercicio, idx) => {
-        // Verifica se há espaço suficiente na página atual
-        if (y >= pageHeight) {
-          doc.addPage(); // Adiciona uma nova página
-          y = 20; // Reseta a posição vertical
-        }
+      // Prepara os dados para a tabela
+      const tableData = treino.exercicios.map((exercicio) => [
+        exercicio.nome || '-', // Nome do exercício (ou "-" se vazio)
+        exercicio.descricao || '-', // Descrição (ou "-" se vazio)
+        exercicio.series || '-', // Séries (ou "-" se vazio)
+        exercicio.reps || '-', // Repetições (ou "-" se vazio)
+      ]);
 
-        // Exercício
-        doc.setFontSize(12);
-        doc.text(`- Exercício: ${exercicio.nome}`, 15, y);
-        y += 6;
+      // Cabeçalhos da tabela
+      const headers = ['Exercício', 'Descrição', 'Séries', 'Repetições'];
 
-        // Descrição
-        doc.setFontSize(10); // Tamanho menor para a descrição
-        doc.text(`Descrição: ${exercicio.descricao}`, 15, y);
-        y += 6;
-
-        // Séries e Repetições
-        doc.setFontSize(12);
-        doc.text(
-          `Séries: ${exercicio.series} | Repetições: ${exercicio.reps}`,
-          15,
-          y
-        );
-        y += 10;
+      // Adiciona a tabela usando autoTable
+      doc.autoTable({
+        head: [headers], // Cabeçalho da tabela
+        body: tableData, // Dados da tabela
+        startY: y, // Posição inicial da tabela
+        theme: 'grid', // Estilo da tabela (grid, striped, plain, etc.)
+        styles: { fontSize: 10, cellPadding: 2 }, // Tamanho da fonte e preenchimento das células
+        columnStyles: {
+          0: { cellWidth: maxTableWidth * 0.3 }, // 30% da largura para "Exercício"
+          1: { cellWidth: maxTableWidth * 0.4 }, // 40% da largura para "Descrição"
+          2: { cellWidth: maxTableWidth * 0.15 }, // 15% da largura para "Séries"
+          3: { cellWidth: maxTableWidth * 0.15 }, // 15% da largura para "Repetições"
+        },
+        didParseCell: (data) => {
+          // Reduz o tamanho da fonte se o conteúdo for muito longo
+          if (data.cell.raw && data.cell.raw.length > 20) {
+            data.cell.styles.fontSize = 8;
+          }
+        },
+        margin: { left: margin, right: margin }, // Margens da tabela
       });
+
+      // Atualiza a posição vertical após a tabela
+      y = doc.lastAutoTable.finalY + 10;
+
+      // Verifica se há espaço suficiente para o próximo treino
+      if (y >= pageHeight) {
+        doc.addPage(); // Adiciona uma nova página
+        y = 20; // Reseta a posição vertical
+      }
     } else {
       // Nenhum exercício adicionado
       doc.setFontSize(12);
-      doc.text('Nenhum exercício adicionado.', 15, y);
+      doc.text('Nenhum exercício adicionado.', margin, y);
       y += 10;
     }
 
@@ -248,7 +265,6 @@ function exportToPDF() {
     }
   });
 
-  // Salva o PDF
   // Gera o nome do arquivo com a data e hora atual
   const now = new Date();
   const year = now.getFullYear();

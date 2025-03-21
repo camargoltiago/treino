@@ -1,7 +1,4 @@
-body {
-    background-color: #f8f9fa;
-  }
-  
+ 
   .treino-header {
     margin-bottom: 20px;
     text-align: center;
@@ -10,11 +7,13 @@ body {
   .card {
     margin-bottom: 15px;
     transition: transform 0.3s ease;
+    background-color: #fafafa;
+    border-color: #b9b9b9;
   }
   
   .card.completed {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
+    background-color: #90e2a6;
+    border-color: #2b3f2f;
     text-decoration: line-through;
   }
   
