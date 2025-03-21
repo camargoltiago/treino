@@ -1,5 +1,5 @@
 // Cache version
-const CACHE_NAME = 'treino-v1';
+const CACHE_NAME = 'treino-v2';
 const urlsToCache = [
   './',
   './index.html',
