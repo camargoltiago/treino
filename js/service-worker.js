@@ -1,5 +1,5 @@
 // Cache version
-const CACHE_NAME = 'treino-v2';
+const CACHE_NAME = 'treino-v3';
 const urlsToCache = [
   './',
   './index.html',
@@ -15,7 +15,9 @@ const urlsToCache = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
+      return cache.addAll(urlsToCache).catch((error) => {
+        console.error('Falha ao adicionar arquivos ao cache:', error);
+      });
     })
   );
 });
