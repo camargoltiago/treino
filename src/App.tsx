@@ -104,8 +104,11 @@ export const App: React.FC = () => {
         const now = Date.now();
         const diff = Math.round((timer.targetTimestamp! - now) / 1000);
 
-        // Bips de contagem regressiva nos segundos 2 e 1
-        if (diff === 2 && lastAlertedSecondRef.current !== 2) {
+        // Bips de contagem regressiva e vibração nos segundos 3, 2 e 1
+        if (diff === 3 && lastAlertedSecondRef.current !== 3) {
+          lastAlertedSecondRef.current = 3;
+          playWarningBeep(soundEnabled);
+        } else if (diff === 2 && lastAlertedSecondRef.current !== 2) {
           lastAlertedSecondRef.current = 2;
           playWarningBeep(soundEnabled);
         } else if (diff === 1 && lastAlertedSecondRef.current !== 1) {

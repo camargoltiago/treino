@@ -45,8 +45,8 @@ export function playWarningBeep(enabled: boolean = true) {
     osc.start();
     osc.stop(ctx.currentTime + 0.12);
 
-    // Vibração tátil sutil de contagem
-    vibrateDevice([100]);
+    // Vibração no 3, 2 e 1
+    vibrateDevice([150]);
   } catch (err) {
     console.warn('Áudio de aviso bloqueado ou não suportado:', err);
   }
@@ -145,10 +145,11 @@ export function sendTimerNotification(exerciseName: string) {
 }
 
 /**
- * Função combinada que aciona som final, vibração forte e notificação de descanso (segundo 0)
+ * Função combinada que aciona som final, vibração longa e notificação de descanso (segundo 0)
  */
 export function notifyTimerFinished(exerciseName: string, soundEnabled: boolean = true) {
   playTimerBeep(soundEnabled);
-  vibrateDevice([350, 150, 350]);
+  // Vibração longa no zero (700ms pulso, 150ms pausa, 700ms pulso)
+  vibrateDevice([700, 150, 700]);
   sendTimerNotification(exerciseName);
 }
