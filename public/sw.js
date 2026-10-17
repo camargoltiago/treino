@@ -1,5 +1,5 @@
 // Service Worker para MuscleTrack PWA
-const CACHE_NAME = 'muscletrack-cache-v3';
+const CACHE_NAME = 'muscletrack-cache-v4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

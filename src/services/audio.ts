@@ -20,7 +20,72 @@ function getAudioContext(): AudioContext | null {
 }
 
 /**
- * Vibra o celular (padrão único longo ou pulsos)
+ * Solicita permissão para notificações do sistema (se ainda não concedido)
+ */
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (typeof window === 'undefined' || !('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+
+  try {
+    const result = await Notification.requestPermission();
+    return result === 'granted';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Dispara notificação via Service Worker com padrão de vibração.
+ * No Android/Chrome, esta é a ÚNICA forma permitida pelo sistema operacional de vibrar
+ * o celular quando a tela está apagada/bloqueada ou o aplicativo em segundo plano.
+ */
+export async function sendTimerNotification(
+  title: string,
+  body: string,
+  vibratePattern: number | number[] = 800,
+  autoCloseMs?: number
+) {
+  if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') {
+    return;
+  }
+
+  const pattern = Array.isArray(vibratePattern) ? vibratePattern : [vibratePattern];
+
+  const options: NotificationOptions & { vibrate?: number[]; renotify?: boolean } = {
+    body,
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    vibrate: pattern,
+    tag: 'rest-timer',
+    renotify: true
+  };
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg) {
+        await reg.showNotification(title, options);
+        if (autoCloseMs && autoCloseMs > 0) {
+          setTimeout(async () => {
+            try {
+              const notifs = await reg.getNotifications({ tag: 'rest-timer' });
+              notifs.forEach(n => n.close());
+            } catch {
+              // ignore
+            }
+          }, autoCloseMs);
+        }
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao disparar notificação com vibração:', err);
+  }
+}
+
+/**
+ * Vibra o celular diretamente (funciona quando a tela está ligada e o app aberto)
  * Retorna true se a chamada foi aceita pelo navegador
  */
 export function vibrateDevice(durationMs: number | number[] = 150): boolean {
@@ -36,9 +101,11 @@ export function vibrateDevice(durationMs: number | number[] = 150): boolean {
 }
 
 /**
- * Toca um bip curto de contagem regressiva e vibra nos segundos 3, 2 e 1
+ * Toca um bip curto de contagem regressiva e vibra nos segundos 3, 2 e 1.
+ * Com a tela aberta: vibração física tátil de 150ms.
+ * Com a tela fechada/bloqueada: canaliza via notificação para vibrar o celular no bolso.
  */
-export function playWarningBeep(enabled: boolean = true) {
+export function playWarningBeep(second: number = 3, exerciseName: string = '', enabled: boolean = true) {
   if (enabled) {
     try {
       const ctx = getAudioContext();
@@ -64,8 +131,18 @@ export function playWarningBeep(enabled: boolean = true) {
     }
   }
 
-  // Vibração rápida de preparação (150ms) nos segundos 3, 2 e 1
+  // Vibração rápida de preparação (150ms) com a tela aberta
   vibrateDevice(150);
+
+  // Se a tela estiver apagada/bloqueada (document.hidden), o Android bloqueia o navigator.vibrate.
+  // Canalizamos via notificação com renotify para acionar o motor de vibração no bolso.
+  if (typeof document !== 'undefined' && document.hidden) {
+    sendTimerNotification(
+      `⏱️ ${second}... Preparar!`,
+      `Próximo: ${exerciseName || 'exercício'}`,
+      [150]
+    );
+  }
 }
 
 /**
@@ -102,9 +179,20 @@ export function playTimerBeep(enabled: boolean = true) {
 /**
  * Função combinada ao finalizar o descanso (segundo 0):
  * Toca o som esportivo + 1 vibração longa e contínua de 800ms
+ * Se a tela estiver fechada (ou em segundo plano), canaliza a notificação para vibrar o celular no bolso
  */
 export function notifyTimerFinished(exerciseName: string = '', soundEnabled: boolean = true) {
   playTimerBeep(soundEnabled);
-  // 1 vibração longa e contínua de 800ms no zero
+
+  // Vibração direta (tela aberta)
   vibrateDevice(800);
+
+  // Notificação do sistema: se a tela estiver fechada, faz o aparelho vibrar 800ms no bolso
+  // e exibe a mensagem na tela de bloqueio
+  sendTimerNotification(
+    '⏱️ Descanso Finalizado!',
+    `Hora da próxima série de ${exerciseName || 'exercício'}. Vamos lá!`,
+    [800],
+    8000
+  );
 }
