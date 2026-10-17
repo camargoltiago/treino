@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#080B11"/>
+    </linearGradient>
+    <linearGradient id="mint" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#00E599"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="15" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="#1E293B" stroke-width="8"/>
+  
+  <!-- Stylized MuscleTrack M Logo -->
+  <g filter="url(#glow)">
+    <path d="M120 370 L120 180 L200 310 L256 220 L312 310 L392 180 L392 370" 
+          fill="none" 
+          stroke="url(#mint)" 
+          stroke-width="52" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+    
+    <circle cx="256" cy="130" r="24" fill="#00E599" />
+  </g>
+</svg>
