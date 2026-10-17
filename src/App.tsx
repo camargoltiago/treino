@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { WorkoutId, WorkoutSession, TimerState, WorkoutPlan } from './types';
 import { WORKOUTS_DATA } from './data/workouts';
 import { StorageService } from './services/storage';
-import { playTimerBeep } from './services/audio';
+import { notifyTimerFinished, requestNotificationPermission } from './services/audio';
 import { calculateMuscleRecovery } from './services/recovery';
 
 import { Header } from './components/Header';
@@ -105,13 +105,15 @@ export const App: React.FC = () => {
 
         if (diff <= 0) {
           clearInterval(timerIntervalRef.current!);
-          setTimer(prev => ({
-            ...prev,
-            isRunning: false,
-            remainingSeconds: 0,
-            targetTimestamp: null
-          }));
-          playTimerBeep(soundEnabled);
+          setTimer(prev => {
+            notifyTimerFinished(prev.exerciseName, soundEnabled);
+            return {
+              ...prev,
+              isRunning: false,
+              remainingSeconds: 0,
+              targetTimestamp: null
+            };
+          });
         } else {
           setTimer(prev => ({ ...prev, remainingSeconds: diff }));
         }
@@ -128,6 +130,7 @@ export const App: React.FC = () => {
   // Funções do Cronômetro
   const startTimer = (seconds: number, exerciseName: string) => {
     if (seconds <= 0) return;
+    requestNotificationPermission();
     const now = Date.now();
     setTimer({
       isRunning: true,
