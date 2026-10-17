@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, VolumeX, Download, Play } from 'lucide-react';
+import { Volume2, VolumeX, Download, Play, Sun, Moon } from 'lucide-react';
 import { WorkoutSession } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 
@@ -7,6 +7,8 @@ interface HeaderProps {
   activeSession: WorkoutSession | null;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
   onOpenActiveSession: () => void;
   canInstallPwa: boolean;
   onInstallPwa: () => void;
@@ -16,6 +18,8 @@ export const Header: React.FC<HeaderProps> = ({
   activeSession,
   soundEnabled,
   onToggleSound,
+  theme,
+  onToggleTheme,
   onOpenActiveSession,
   canInstallPwa,
   onInstallPwa
@@ -28,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
         
         {/* Logo MuscleTrack */}
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-mint-600 to-accent-500 flex items-center justify-center shadow-mint-glow-sm text-slate-950 font-black text-lg">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-mint-600 to-mint-400 flex items-center justify-center shadow-mint-glow-sm text-slate-950 font-black text-lg">
             M
           </div>
           <div>
@@ -52,6 +56,19 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-[11px]">Instalar</span>
             </button>
           )}
+
+          {/* Alternar Tema Claro / Escuro */}
+          <button
+            onClick={onToggleTheme}
+            className="w-8 h-8 rounded-xl bg-dark-card border border-dark-border text-slate-300 hover:text-white flex items-center justify-center transition active:scale-90"
+            title={theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-cyan-600" />
+            )}
+          </button>
 
           {/* Som Ativo/Mudo */}
           <button

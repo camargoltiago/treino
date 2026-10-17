@@ -12,6 +12,7 @@ export interface AppStoredData {
   workouts: Record<string, WorkoutPlan>;
   timer: Partial<TimerState>;
   soundEnabled: boolean;
+  theme?: 'dark' | 'light';
 }
 
 export const StorageService = {
@@ -42,7 +43,8 @@ export const StorageService = {
           history: Array.isArray(parsed.history) ? parsed.history : [],
           workouts: parsed.workouts && Object.keys(parsed.workouts).length > 0 ? parsed.workouts : workouts,
           timer: parsed.timer || {},
-          soundEnabled: parsed.soundEnabled ?? true
+          soundEnabled: parsed.soundEnabled ?? true,
+          theme: parsed.theme || 'dark'
         };
       }
 
@@ -71,7 +73,8 @@ export const StorageService = {
       history: [],
       workouts: { ...WORKOUTS_DATA },
       timer: {},
-      soundEnabled: true
+      soundEnabled: true,
+      theme: 'dark'
     };
   },
 
@@ -81,6 +84,7 @@ export const StorageService = {
     workouts: Record<string, WorkoutPlan>;
     timer: TimerState;
     soundEnabled: boolean;
+    theme?: 'dark' | 'light';
   }) {
     try {
       const payload: AppStoredData = {
@@ -97,7 +101,8 @@ export const StorageService = {
           remainingSeconds: data.timer.remainingSeconds,
           exerciseName: data.timer.exerciseName
         },
-        soundEnabled: data.soundEnabled
+        soundEnabled: data.soundEnabled,
+        theme: data.theme || 'dark'
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       localStorage.setItem(WORKOUTS_STORAGE_KEY, JSON.stringify(data.workouts));

@@ -66,9 +66,9 @@ export const MuscleMap: React.FC<MuscleMapProps> = ({ recovery, onSelectMuscle }
           xmlns="http://www.w3.org/2000/svg"
         >
           {/* Silhueta Base do Corpo Humano */}
-          <g fill="#162235" stroke="#1F2C42" strokeWidth="1.5">
+          <g fill="var(--color-silhouette)" stroke="var(--color-silhouette-stroke)" strokeWidth="1.5">
             {/* Cabeça */}
-            <circle cx="100" cy="30" r="15" fill="#1C2B42" />
+            <circle cx="100" cy="30" r="15" fill="var(--color-head)" />
             <path d="M93 45 L107 45 L109 52 L91 52 Z" />
             
             {/* Base Tronco / Membros (silhueta de fundo) */}

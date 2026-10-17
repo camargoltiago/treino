@@ -9,20 +9,20 @@ export default {
     extend: {
       colors: {
         dark: {
-          bg: '#080B11',
-          surface: '#0F1622',
-          card: '#151E2E',
-          cardHover: '#1B273A',
-          border: '#1F2C42',
-          borderLight: '#2A3B56',
+          bg: 'rgb(var(--color-bg) / <alpha-value>)',
+          surface: 'rgb(var(--color-surface) / <alpha-value>)',
+          card: 'rgb(var(--color-card) / <alpha-value>)',
+          cardHover: 'rgb(var(--color-card-hover) / <alpha-value>)',
+          border: 'rgb(var(--color-border) / <alpha-value>)',
+          borderLight: 'rgb(var(--color-border-light) / <alpha-value>)',
         },
         mint: {
           50: '#E6FCF5',
           100: '#C2F9E8',
           200: '#8CF5D4',
           300: '#4DEEBD',
-          400: '#1DE8A8',
-          500: '#00E599',
+          400: 'rgb(var(--color-mint-400) / <alpha-value>)',
+          500: 'rgb(var(--color-mint-500) / <alpha-value>)',
           600: '#00BF7F',
           700: '#009462',
           800: '#006E49',

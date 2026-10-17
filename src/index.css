@@ -2,16 +2,89 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Tema Claro */
+  --color-bg: 246 248 251;          /* #F6F8FB fundo suave */
+  --color-surface: 238 242 248;     /* #EEF2F8 superfícies secundárias */
+  --color-card: 255 255 255;        /* #FFFFFF cards limpos */
+  --color-card-hover: 241 245 249;  /* #F1F5F9 */
+  --color-border: 226 232 240;      /* #E2E8F0 */
+  --color-border-light: 203 213 225;/* #CBD5E1 */
+  --color-mint-400: 5 150 105;      /* #059669 */
+  --color-mint-500: 16 185 129;     /* #10B981 */
+  --color-silhouette: #CBD5E1;
+  --color-silhouette-stroke: #94A3B8;
+  --color-head: #CBD5E1;
+}
+
+.dark {
+  /* Tema Escuro Obsidian/Mint */
+  --color-bg: 8 11 17;              /* #080B11 */
+  --color-surface: 15 22 34;        /* #0F1622 */
+  --color-card: 21 30 46;           /* #151E2E */
+  --color-card-hover: 27 39 58;     /* #1B273A */
+  --color-border: 31 44 66;         /* #1F2C42 */
+  --color-border-light: 42 59 86;   /* #2A3B56 */
+  --color-mint-400: 29 232 168;     /* #1DE8A8 */
+  --color-mint-500: 0 229 153;      /* #00E599 */
+  --color-silhouette: #162235;
+  --color-silhouette-stroke: #1F2C42;
+  --color-head: #1C2B42;
+}
+
 @layer base {
   * {
     -webkit-tap-highlight-color: transparent;
   }
   
   body {
-    background-color: #080B11;
+    background-color: rgb(var(--color-bg));
     color: #F8FAFC;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
+}
+
+/* Ajustes automáticos de cores de texto para Tema Claro */
+html:not(.dark) body {
+  color: #0F172A;
+}
+
+html:not(.dark) .text-white {
+  color: #0F172A !important;
+}
+
+html:not(.dark) .text-slate-100 {
+  color: #1E293B !important;
+}
+
+html:not(.dark) .text-slate-200 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .text-slate-300 {
+  color: #475569 !important;
+}
+
+html:not(.dark) .text-slate-400 {
+  color: #64748B !important;
+}
+
+html:not(.dark) .text-slate-500 {
+  color: #64748B !important;
+}
+
+/* Botões com destaque mint continuam com texto escuro nítido */
+html:not(.dark) .bg-mint-500,
+html:not(.dark) button.bg-mint-500,
+html:not(.dark) .bg-mint-500 * {
+  color: #020617 !important;
+}
+
+/* Backdrops translúcidos de modais */
+html:not(.dark) .bg-black\/80,
+html:not(.dark) .bg-black\/70 {
+  background-color: rgba(15, 23, 42, 0.5) !important;
 }
 
 /* Remover spinners de inputs numéricos */
@@ -30,12 +103,12 @@ input[type=number] {
   height: 5px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #0F1622;
+  background: rgb(var(--color-surface));
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1F2C42;
+  background: rgb(var(--color-border));
   border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #2A3B56;
+  background: rgb(var(--color-border-light));
 }

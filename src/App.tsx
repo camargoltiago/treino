@@ -27,6 +27,16 @@ export const App: React.FC = () => {
   const [history, setHistory] = useState<WorkoutSession[]>(initialData.history);
   const [workouts, setWorkouts] = useState<Record<string, WorkoutPlan>>(initialData.workouts || { ...WORKOUTS_DATA });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(initialData.soundEnabled);
+  const [theme, setTheme] = useState<'dark' | 'light'>(initialData.theme || 'dark');
+
+  // Aplicar tema no elemento raiz do documento
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   // Estado do Cronômetro
   const [timer, setTimer] = useState<TimerState>({
@@ -70,9 +80,10 @@ export const App: React.FC = () => {
       history,
       workouts,
       timer,
-      soundEnabled
+      soundEnabled,
+      theme
     });
-  }, [activeSession, history, workouts, timer, soundEnabled]);
+  }, [activeSession, history, workouts, timer, soundEnabled, theme]);
 
   // Se houver sessão em andamento ao abrir, navega para o treino
   useEffect(() => {
@@ -462,6 +473,8 @@ export const App: React.FC = () => {
         activeSession={activeSession}
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(prev => !prev)}
+        theme={theme}
+        onToggleTheme={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
         onOpenActiveSession={() => setCurrentTab('workouts')}
         canInstallPwa={!!deferredPrompt}
         onInstallPwa={handleInstallPwa}
@@ -508,9 +521,6 @@ export const App: React.FC = () => {
               onSaveWorkout={handleSaveWorkout}
               onDeleteWorkout={handleDeleteWorkout}
               onAddWorkout={handleAddWorkout}
-              onExportWorkouts={handleExportWorkouts}
-              onImportWorkouts={handleImportWorkouts}
-              onResetWorkoutsToDefault={handleResetWorkoutsToDefault}
             />
           )
         )}

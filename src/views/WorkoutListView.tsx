@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Play, ChevronDown, ChevronUp, Info, Edit3, Plus, Download, Upload, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, ChevronDown, ChevronUp, Info, Edit3, Plus } from 'lucide-react';
 import { WorkoutId, WorkoutSession, WorkoutPlan } from '../types';
 import { WorkoutEditorModal } from '../components/WorkoutEditorModal';
 
@@ -12,9 +12,6 @@ interface WorkoutListViewProps {
   onSaveWorkout: (workout: WorkoutPlan) => void;
   onDeleteWorkout: (id: string) => void;
   onAddWorkout: (workout: WorkoutPlan) => void;
-  onExportWorkouts: () => void;
-  onImportWorkouts: (jsonString: string) => void;
-  onResetWorkoutsToDefault: () => void;
 }
 
 export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
@@ -25,14 +22,10 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
   onOpenGuide,
   onSaveWorkout,
   onDeleteWorkout,
-  onAddWorkout,
-  onExportWorkouts,
-  onImportWorkouts,
-  onResetWorkoutsToDefault
+  onAddWorkout
 }) => {
   const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
   const [editingWorkout, setEditingWorkout] = useState<WorkoutPlan | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedWorkout(expandedWorkout === id ? null : id);
@@ -71,83 +64,24 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
     setEditingWorkout(newPlan);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string;
-        onImportWorkouts(text);
-      } catch (err) {
-        alert('Erro ao carregar arquivo de treinos.');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       
-      {/* Input Oculto de Arquivo */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
-      {/* Header & Ações Rápidas */}
+      {/* Header com título e apenas o botão + Novo Treino */}
       <div className="border-b border-dark-border pb-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-mint-400">Rotina de Hipertrofia</span>
-          <span className="text-xs text-slate-400 font-mono">{Object.keys(workouts).length} treinos cadastrados</span>
-        </div>
-        <h2 className="text-xl sm:text-2xl font-black text-white mt-0.5">Meus Treinos</h2>
-        <p className="text-xs text-slate-400">Personalize exercícios, cargas, repetições ou adicione novas rotinas.</p>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-mint-400">Rotina de Hipertrofia</span>
+            <h2 className="text-xl sm:text-2xl font-black text-white mt-0.5">Meus Treinos</h2>
+            <p className="text-xs text-slate-400">Edite exercícios pelo ícone do lápis em cada card.</p>
+          </div>
 
-        {/* Barra de Ações para Treinos: Criar, Baixar JSON, Subir JSON */}
-        <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2">
           <button
             onClick={handleCreateNewWorkout}
-            className="h-10 bg-mint-500 hover:bg-mint-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-mint-glow-sm transition active:scale-95"
+            className="h-10 px-4 bg-mint-500 hover:bg-mint-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-mint-glow-sm transition active:scale-95 shrink-0"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>+ Novo Treino</span>
-          </button>
-
-          <button
-            onClick={onExportWorkouts}
-            className="h-10 bg-dark-card hover:bg-dark-cardHover border border-dark-borderLight text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-            title="Baixar arquivo JSON com todos os treinos para backup ou edição"
-          >
-            <Download className="w-3.5 h-3.5 text-mint-400" />
-            <span>Baixar (.json)</span>
-          </button>
-
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="h-10 bg-dark-card hover:bg-dark-cardHover border border-dark-borderLight text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-            title="Importar novo arquivo JSON com treinos"
-          >
-            <Upload className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Subir (.json)</span>
-          </button>
-
-          <button
-            onClick={() => {
-              if (window.confirm('Deseja restaurar os treinos A, B e C para a versão padrão de fábrica?')) {
-                onResetWorkoutsToDefault();
-              }
-            }}
-            className="h-10 bg-dark-surface hover:bg-dark-card border border-dark-border text-slate-400 hover:text-amber-400 font-medium rounded-xl text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-            title="Restaurar treinos padrão de fábrica"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Restaurar</span>
+            <span>Novo Treino</span>
           </button>
         </div>
       </div>
@@ -157,19 +91,13 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
         {Object.keys(workouts).length === 0 ? (
           <div className="bg-dark-card border border-dark-border rounded-3xl p-8 text-center text-xs text-slate-400 space-y-3">
             <p className="text-sm font-bold text-white">Nenhum treino disponível</p>
-            <p>Você pode criar um novo treino do zero ou restaurar os treinos padrão de fábrica.</p>
+            <p>Você pode criar um novo treino do zero ou restaurar no Histórico.</p>
             <div className="flex justify-center gap-2 pt-2">
               <button
                 onClick={handleCreateNewWorkout}
                 className="px-4 py-2 bg-mint-500 text-slate-950 font-bold rounded-xl text-xs"
               >
                 + Criar Treino
-              </button>
-              <button
-                onClick={onResetWorkoutsToDefault}
-                className="px-4 py-2 bg-dark-surface text-slate-300 font-bold rounded-xl text-xs border border-dark-border"
-              >
-                Restaurar Padrão
               </button>
             </div>
           </div>
@@ -208,14 +136,13 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
                     <p className="text-xs text-slate-400">{w.focus}</p>
                   </div>
 
-                  {/* Botão de Edição Rápida no Card */}
+                  {/* Único Botão de Edição: O lápis no topo direito do card */}
                   <button
                     onClick={() => setEditingWorkout(w)}
-                    className="p-2.5 rounded-xl bg-dark-surface hover:bg-dark-cardHover border border-dark-border text-slate-300 hover:text-mint-400 transition flex items-center gap-1.5 text-xs font-bold active:scale-95"
-                    title="Editar exercícios e configurações deste treino"
+                    className="w-9 h-9 rounded-xl bg-dark-surface hover:bg-dark-cardHover border border-dark-border text-mint-400 hover:text-mint-300 transition flex items-center justify-center active:scale-95 shrink-0"
+                    title="Editar exercícios deste treino"
                   >
-                    <Edit3 className="w-4 h-4 text-mint-400" />
-                    <span className="hidden sm:inline">Editar</span>
+                    <Edit3 className="w-4 h-4 stroke-[2.2]" />
                   </button>
                 </div>
 
@@ -278,35 +205,25 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
                   </div>
                 )}
 
-                {/* Botões de Ação do Card: Editar & Iniciar */}
-                <div className="mt-4 pt-2 grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => setEditingWorkout(w)}
-                    className="col-span-1 h-12 rounded-2xl bg-dark-surface hover:bg-dark-cardHover text-slate-300 hover:text-white font-bold text-xs sm:text-sm border border-dark-borderLight active:scale-98 transition flex items-center justify-center gap-1.5"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-mint-400" />
-                    <span>Editar</span>
-                  </button>
-
-                  <div className="col-span-2">
-                    {isCurrentActive ? (
-                      <button
-                        onClick={() => onStartWorkout(id)}
-                        className="w-full h-12 rounded-2xl bg-mint-500 hover:bg-mint-400 text-slate-950 font-black text-sm shadow-mint-glow active:scale-98 transition flex items-center justify-center gap-2"
-                      >
-                        <Play className="w-4 h-4 fill-current" />
-                        <span>Continuar</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => onStartWorkout(id)}
-                        className="w-full h-12 rounded-2xl bg-mint-500 hover:bg-mint-400 text-slate-950 font-black text-sm shadow-mint-glow-sm active:scale-98 transition flex items-center justify-center gap-2"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>Iniciar {w.shortTitle}</span>
-                      </button>
-                    )}
-                  </div>
+                {/* Botão de Iniciar/Continuar (Ocupando a largura total) */}
+                <div className="mt-4 pt-2">
+                  {isCurrentActive ? (
+                    <button
+                      onClick={() => onStartWorkout(id)}
+                      className="w-full h-12 rounded-2xl bg-mint-500 hover:bg-mint-400 text-slate-950 font-black text-sm shadow-mint-glow active:scale-98 transition flex items-center justify-center gap-2"
+                    >
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>Continuar Sessão</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onStartWorkout(id)}
+                      className="w-full h-12 rounded-2xl bg-mint-500 hover:bg-mint-400 text-slate-950 font-black text-sm shadow-mint-glow-sm active:scale-98 transition flex items-center justify-center gap-2"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Iniciar {w.shortTitle}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );
