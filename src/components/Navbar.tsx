@@ -12,8 +12,8 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, onChangeTab, hasActiveSession }) => {
   const tabs = [
     { id: 'today', label: 'Hoje', icon: Home },
-    { id: 'workouts', label: 'Treino', icon: Dumbbell, hasBadge: hasActiveSession },
     { id: 'recovery', label: 'Músculos', icon: Activity },
+    { id: 'workouts', label: 'Treino', icon: Dumbbell, hasBadge: hasActiveSession },
     { id: 'progress', label: 'Evolução', icon: TrendingUp },
     { id: 'history', label: 'Histórico', icon: Clock }
   ];

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { WorkoutId, WorkoutSession, TimerState, WorkoutPlan } from './types';
 import { WORKOUTS_DATA } from './data/workouts';
 import { StorageService } from './services/storage';
-import { notifyTimerFinished, requestNotificationPermission } from './services/audio';
+import { notifyTimerFinished, playWarningBeep, vibrateDevice, requestNotificationPermission } from './services/audio';
 import { calculateMuscleRecovery } from './services/recovery';
 
 import { Header } from './components/Header';
@@ -94,6 +94,7 @@ export const App: React.FC = () => {
 
   // Intervalo do Cronômetro de Descanso
   const timerIntervalRef = useRef<number | null>(null);
+  const lastAlertedSecondRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (timer.isRunning && !timer.isPaused && timer.targetTimestamp) {
@@ -103,8 +104,18 @@ export const App: React.FC = () => {
         const now = Date.now();
         const diff = Math.round((timer.targetTimestamp! - now) / 1000);
 
+        // Bips de contagem regressiva nos segundos 2 e 1
+        if (diff === 2 && lastAlertedSecondRef.current !== 2) {
+          lastAlertedSecondRef.current = 2;
+          playWarningBeep(soundEnabled);
+        } else if (diff === 1 && lastAlertedSecondRef.current !== 1) {
+          lastAlertedSecondRef.current = 1;
+          playWarningBeep(soundEnabled);
+        }
+
         if (diff <= 0) {
           clearInterval(timerIntervalRef.current!);
+          lastAlertedSecondRef.current = null;
           setTimer(prev => {
             notifyTimerFinished(prev.exerciseName, soundEnabled);
             return {
@@ -130,6 +141,7 @@ export const App: React.FC = () => {
   // Funções do Cronômetro
   const startTimer = (seconds: number, exerciseName: string) => {
     if (seconds <= 0) return;
+    lastAlertedSecondRef.current = null;
     requestNotificationPermission();
     const now = Date.now();
     setTimer({
@@ -143,6 +155,7 @@ export const App: React.FC = () => {
   };
 
   const adjustTimer = (delta: number) => {
+    lastAlertedSecondRef.current = null;
     if (!timer.isRunning) {
       startTimer(Math.max(15, delta), 'Descanso rápido');
       return;
@@ -171,6 +184,7 @@ export const App: React.FC = () => {
   };
 
   const skipTimer = () => {
+    lastAlertedSecondRef.current = null;
     setTimer(prev => ({ ...prev, isRunning: false, remainingSeconds: 0, targetTimestamp: null }));
   };
 
@@ -271,6 +285,7 @@ export const App: React.FC = () => {
       }
 
       set.completed = true;
+      vibrateDevice([50]);
 
       // Regra Bi-Set: A6 e C6 não disparam cronômetro
       if (exMeta?.isBiSetFirst) {
