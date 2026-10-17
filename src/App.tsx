@@ -109,13 +109,13 @@ export const App: React.FC = () => {
         // Bips de contagem regressiva e vibração nos segundos 3, 2 e 1
         if (diff === 3 && lastAlertedSecondRef.current !== 3) {
           lastAlertedSecondRef.current = 3;
-          playWarningBeep(soundEnabled);
+          playWarningBeep(3, timer.exerciseName, soundEnabled);
         } else if (diff === 2 && lastAlertedSecondRef.current !== 2) {
           lastAlertedSecondRef.current = 2;
-          playWarningBeep(soundEnabled);
+          playWarningBeep(2, timer.exerciseName, soundEnabled);
         } else if (diff === 1 && lastAlertedSecondRef.current !== 1) {
           lastAlertedSecondRef.current = 1;
-          playWarningBeep(soundEnabled);
+          playWarningBeep(1, timer.exerciseName, soundEnabled);
         }
 
         if (diff <= 0) {

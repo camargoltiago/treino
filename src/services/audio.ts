@@ -20,36 +20,39 @@ function getAudioContext(): AudioContext | null {
 }
 
 /**
- * Toca um bip curto de contagem regressiva (para os segundos 2 e 1)
+ * Toca um bip curto de contagem regressiva e vibra nos segundos 3, 2 e 1
  */
-export function playWarningBeep(enabled: boolean = true) {
-  if (!enabled) return;
+export function playWarningBeep(second: number = 3, exerciseName: string = '', enabled: boolean = true) {
+  if (enabled) {
+    try {
+      const ctx = getAudioContext();
+      if (ctx) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
 
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
+        osc.type = 'sine';
+        // Bip curto de preparação (750 Hz)
+        osc.frequency.setValueAtTime(750, ctx.currentTime);
 
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
 
-    osc.type = 'sine';
-    // Bip curto de preparação (750 Hz)
-    osc.frequency.setValueAtTime(750, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
 
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start();
-    osc.stop(ctx.currentTime + 0.12);
-
-    // Vibração no 3, 2 e 1
-    vibrateDevice([150]);
-  } catch (err) {
-    console.warn('Áudio de aviso bloqueado ou não suportado:', err);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      }
+    } catch (err) {
+      console.warn('Áudio de aviso bloqueado ou não suportado:', err);
+    }
   }
+
+  // Vibração via API web padrão
+  vibrateDevice([180]);
+
+  // Vibração garantida via sistema de notificações (Android PWA)
+  sendCountdownNotification(second, exerciseName);
 }
 
 /**
@@ -113,7 +116,37 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 /**
- * Dispara notificação push nativa do sistema / PWA
+ * Notificação e vibração nos segundos 3, 2 e 1 (atualiza a mesma notificação via tag)
+ */
+export function sendCountdownNotification(second: number, exerciseName: string) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const title = `⏱️ ${second}... Preparar!`;
+  const options = {
+    body: `Próximo: ${exerciseName || 'exercício'}`,
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    vibrate: [180],
+    tag: 'rest-timer',
+    renotify: true,
+    silent: true
+  };
+
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) {
+          reg.showNotification(title, options);
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Não foi possível disparar notificação de contagem:', err);
+  }
+}
+
+/**
+ * Dispara notificação push nativa do sistema / PWA com vibração longa
  */
 export function sendTimerNotification(exerciseName: string) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -123,8 +156,9 @@ export function sendTimerNotification(exerciseName: string) {
     body: `Hora da próxima série de ${exerciseName || 'exercício'}. Vamos com tudo!`,
     icon: './icons/icon-192.png',
     badge: './icons/icon-192.png',
-    vibrate: [300, 150, 300],
-    tag: 'rest-timer'
+    vibrate: [700, 200, 700],
+    tag: 'rest-timer',
+    renotify: true
   };
 
   try {
@@ -132,6 +166,12 @@ export function sendTimerNotification(exerciseName: string) {
       navigator.serviceWorker.getRegistration().then(reg => {
         if (reg) {
           reg.showNotification(title, options);
+          // Fechar automaticamente a notificação após 7s se não clicada
+          setTimeout(() => {
+            reg.getNotifications({ tag: 'rest-timer' }).then(notifs => {
+              notifs.forEach(n => n.close());
+            });
+          }, 7000);
         } else {
           new Notification(title, options);
         }
@@ -145,11 +185,11 @@ export function sendTimerNotification(exerciseName: string) {
 }
 
 /**
- * Função combinada que aciona som final, vibração longa e notificação de descanso (segundo 0)
+ * Função combinada que aciona som final, vibração longa e notificação de término (segundo 0)
  */
 export function notifyTimerFinished(exerciseName: string, soundEnabled: boolean = true) {
   playTimerBeep(soundEnabled);
-  // Vibração longa no zero (700ms pulso, 150ms pausa, 700ms pulso)
-  vibrateDevice([700, 150, 700]);
+  // Vibração longa no zero (700ms pulso, 200ms pausa, 700ms pulso)
+  vibrateDevice([700, 200, 700]);
   sendTimerNotification(exerciseName);
 }
