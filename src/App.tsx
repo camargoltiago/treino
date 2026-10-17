@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { WorkoutId, WorkoutSession, TimerState, WorkoutPlan } from './types';
 import { WORKOUTS_DATA } from './data/workouts';
 import { StorageService } from './services/storage';
-import { notifyTimerFinished, playWarningBeep, vibrateDevice, requestNotificationPermission } from './services/audio';
+import { notifyTimerFinished, playWarningBeep, vibrateDevice } from './services/audio';
 import { calculateMuscleRecovery } from './services/recovery';
 
 import { Header } from './components/Header';
@@ -106,16 +106,16 @@ export const App: React.FC = () => {
         const now = Date.now();
         const diff = Math.round((timer.targetTimestamp! - now) / 1000);
 
-        // Bips de contagem regressiva e vibração nos segundos 3, 2 e 1
+        // Bips de contagem regressiva nos segundos 3, 2 e 1
         if (diff === 3 && lastAlertedSecondRef.current !== 3) {
           lastAlertedSecondRef.current = 3;
-          playWarningBeep(3, timer.exerciseName, soundEnabled);
+          playWarningBeep(soundEnabled);
         } else if (diff === 2 && lastAlertedSecondRef.current !== 2) {
           lastAlertedSecondRef.current = 2;
-          playWarningBeep(2, timer.exerciseName, soundEnabled);
+          playWarningBeep(soundEnabled);
         } else if (diff === 1 && lastAlertedSecondRef.current !== 1) {
           lastAlertedSecondRef.current = 1;
-          playWarningBeep(1, timer.exerciseName, soundEnabled);
+          playWarningBeep(soundEnabled);
         }
 
         if (diff <= 0) {
@@ -147,7 +147,6 @@ export const App: React.FC = () => {
   const startTimer = (seconds: number, exerciseName: string) => {
     if (seconds <= 0) return;
     lastAlertedSecondRef.current = null;
-    requestNotificationPermission();
     const now = Date.now();
     setTimer({
       isRunning: true,
