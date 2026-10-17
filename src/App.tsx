@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { WorkoutId, WorkoutSession, TimerState, WorkoutPlan } from './types';
 import { WORKOUTS_DATA } from './data/workouts';
 import { StorageService } from './services/storage';
-import { notifyTimerFinished, playWarningBeep, vibrateDevice, requestNotificationPermission } from './services/audio';
+import { notifyTimerFinished, playWarningBeep } from './services/audio';
 import { calculateMuscleRecovery } from './services/recovery';
 
 import { Header } from './components/Header';
@@ -109,13 +109,13 @@ export const App: React.FC = () => {
         // Bips de contagem regressiva nos segundos 3, 2 e 1
         if (diff === 3 && lastAlertedSecondRef.current !== 3) {
           lastAlertedSecondRef.current = 3;
-          playWarningBeep(3, timer.exerciseName, soundEnabled);
+          playWarningBeep(soundEnabled);
         } else if (diff === 2 && lastAlertedSecondRef.current !== 2) {
           lastAlertedSecondRef.current = 2;
-          playWarningBeep(2, timer.exerciseName, soundEnabled);
+          playWarningBeep(soundEnabled);
         } else if (diff === 1 && lastAlertedSecondRef.current !== 1) {
           lastAlertedSecondRef.current = 1;
-          playWarningBeep(1, timer.exerciseName, soundEnabled);
+          playWarningBeep(soundEnabled);
         }
 
         if (diff <= 0) {
@@ -146,7 +146,6 @@ export const App: React.FC = () => {
   // Funções do Cronômetro
   const startTimer = (seconds: number, exerciseName: string) => {
     if (seconds <= 0) return;
-    requestNotificationPermission();
     lastAlertedSecondRef.current = null;
     const now = Date.now();
     setTimer({
@@ -195,7 +194,6 @@ export const App: React.FC = () => {
 
   // Funções da Sessão de Treino
   const handleStartWorkout = async (workoutId: WorkoutId) => {
-    requestNotificationPermission();
     const plan = workouts[workoutId] || WORKOUTS_DATA[workoutId];
     if (!plan) return;
 
@@ -295,7 +293,6 @@ export const App: React.FC = () => {
       }
 
       set.completed = true;
-      vibrateDevice([50]);
 
       // Regra Bi-Set: A6 e C6 não disparam cronômetro
       if (exMeta?.isBiSetFirst) {
