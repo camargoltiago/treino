@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2, ArrowUp, ArrowDown, Save, Dumbbell, AlertTriangle } from 'lucide-react';
 import { WorkoutPlan, ExerciseDefinition, MuscleGroup } from '../types';
+import { feedback } from '../services/feedback';
 
 interface WorkoutEditorModalProps {
   workout: WorkoutPlan | null;
@@ -66,7 +67,7 @@ export const WorkoutEditorModal: React.FC<WorkoutEditorModalProps> = ({
 
   const handleDeleteExercise = (index: number) => {
     if (exercises.length <= 1) {
-      alert('O treino deve conter pelo menos 1 exercício.');
+      feedback.warning('O treino deve conter pelo menos 1 exercício.');
       return;
     }
     const updated = exercises.filter((_, i) => i !== index);
@@ -76,7 +77,7 @@ export const WorkoutEditorModal: React.FC<WorkoutEditorModalProps> = ({
   const handleAddNewExercise = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExName.trim()) {
-      alert('Preencha o nome do exercício.');
+      feedback.warning('Preencha o nome do exercício.');
       return;
     }
 
@@ -97,15 +98,16 @@ export const WorkoutEditorModal: React.FC<WorkoutEditorModalProps> = ({
     setNewExName('');
     setNewExNotes('');
     setShowAddEx(false);
+    feedback.success(`Exercício "${newEx.name}" adicionado.`);
   };
 
   const handleSaveAll = () => {
     if (!title.trim()) {
-      alert('Digite o título do treino.');
+      feedback.warning('Digite o título do treino.');
       return;
     }
     if (exercises.length === 0) {
-      alert('Adicione pelo menos 1 exercício ao treino.');
+      feedback.warning('Adicione pelo menos 1 exercício ao treino.');
       return;
     }
 
@@ -438,8 +440,14 @@ export const WorkoutEditorModal: React.FC<WorkoutEditorModalProps> = ({
         <div className="p-4 border-t border-dark-border flex items-center justify-between gap-2">
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm(`Tem certeza que deseja apagar o ${workout.title}?`)) {
+            onClick={async () => {
+              const confirmed = await feedback.confirm({
+                title: 'Excluir Treino?',
+                message: `Tem certeza que deseja apagar permanentemente o ${workout.title}?`,
+                variant: 'danger',
+                confirmText: 'Excluir'
+              });
+              if (confirmed) {
                 onDeleteWorkout(workout.id);
                 onClose();
               }

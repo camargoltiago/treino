@@ -3,6 +3,7 @@ import { Clock, Download, Upload, Trash2, Calendar, ChevronRight, Dumbbell, Rota
 import { WorkoutSession, WorkoutPlan } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 import { StorageService, STORAGE_KEY } from '../services/storage';
+import { feedback } from '../services/feedback';
 
 interface HistoryBackupViewProps {
   history: WorkoutSession[];
@@ -35,7 +36,7 @@ export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
         const parsed = JSON.parse(text);
@@ -50,15 +51,21 @@ export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
 
         if (loadedWorkouts && Object.keys(loadedWorkouts).length > 0) {
           const count = Object.keys(loadedWorkouts).length;
-          if (window.confirm(`Subir ${count} treinos do arquivo JSON? A lista atual de treinos será substituída.`)) {
+          const confirmed = await feedback.confirm({
+            title: 'Subir Treinos',
+            message: `Subir ${count} treinos do arquivo JSON? A lista atual de treinos será substituída.`,
+            variant: 'warning',
+            confirmText: 'Subir Treinos'
+          });
+          if (confirmed) {
             onRestoreWorkouts(loadedWorkouts);
-            alert(`Sucesso! ${count} treinos foram carregados.`);
+            feedback.success(`${count} treinos foram carregados com sucesso!`);
           }
         } else {
-          alert('Arquivo JSON de treinos inválido. Verifique o formato exportado.');
+          feedback.error('Arquivo JSON de treinos inválido. Verifique o formato exportado.');
         }
       } catch (err) {
-        alert('Erro ao processar o arquivo JSON de treinos.');
+        feedback.error('Erro ao processar o arquivo JSON de treinos.');
       }
     };
     reader.readAsText(file);
@@ -71,21 +78,28 @@ export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
         if (json && Array.isArray(json.history)) {
-          if (window.confirm(`Restaurar backup com ${json.history.length} sessões? Os dados locais atuais serão substituídos.`)) {
+          const confirmed = await feedback.confirm({
+            title: 'Restaurar Backup Completo',
+            message: `Restaurar backup com ${json.history.length} sessões? Os dados locais atuais serão substituídos.`,
+            variant: 'warning',
+            confirmText: 'Restaurar'
+          });
+          if (confirmed) {
             onRestoreBackup(json.history, json.activeSession || null);
             if (json.workouts && typeof json.workouts === 'object') {
               onRestoreWorkouts(json.workouts);
             }
+            feedback.success('Backup restaurado com sucesso!');
           }
         } else {
-          alert('Arquivo JSON de backup completo inválido.');
+          feedback.error('Arquivo JSON de backup completo inválido.');
         }
       } catch (err) {
-        alert('Erro ao processar o arquivo JSON de backup.');
+        feedback.error('Erro ao processar o arquivo JSON de backup.');
       }
     };
     reader.readAsText(file);
@@ -159,9 +173,16 @@ export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
         <div className="pt-2 border-t border-dark-border/80 flex items-center justify-between text-xs text-slate-400">
           <span>Precisa dos treinos originais de volta?</span>
           <button
-            onClick={() => {
-              if (window.confirm('Restaurar os treinos A, B e C para os padrões originais? Suas edições de treinos serão substituídas.')) {
+            onClick={async () => {
+              const confirmed = await feedback.confirm({
+                title: 'Restaurar Originais?',
+                message: 'Restaurar os treinos A, B e C para os padrões de fábrica? Suas edições de treinos serão substituídas.',
+                variant: 'warning',
+                confirmText: 'Restaurar'
+              });
+              if (confirmed) {
                 onResetWorkoutsToDefault();
+                feedback.success('Treinos padrão restaurados.');
               }
             }}
             className="text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition"
@@ -260,9 +281,16 @@ export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
         <div className="pt-2 border-t border-dark-border/80 flex items-center justify-between text-xs text-slate-400">
           <span>Espaço local utilizado: <strong className="text-white font-mono">{sizeKb} KB</strong></span>
           <button
-            onClick={() => {
-              if (window.confirm('Tem certeza absoluta que deseja resetar e apagar todos os dados e histórico salvos?')) {
+            onClick={async () => {
+              const confirmed = await feedback.confirm({
+                title: 'Limpar Todos os Dados?',
+                message: 'Tem certeza absoluta que deseja resetar e apagar permanentemente todo o histórico e treinos salvos?',
+                variant: 'danger',
+                confirmText: 'Sim, Limpar Tudo'
+              });
+              if (confirmed) {
                 onResetAll();
+                feedback.info('Todos os dados foram resetados.');
               }
             }}
             className="text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1 transition"
@@ -345,10 +373,17 @@ export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
             {/* Rodapé do Modal */}
             <div className="p-3.5 border-t border-dark-border flex items-center justify-between gap-2">
               <button
-                onClick={() => {
-                  if (window.confirm('Excluir esta sessão do histórico permanentemente?')) {
+                onClick={async () => {
+                  const confirmed = await feedback.confirm({
+                    title: 'Excluir Sessão?',
+                    message: 'Excluir esta sessão do histórico permanentemente?',
+                    variant: 'danger',
+                    confirmText: 'Excluir'
+                  });
+                  if (confirmed) {
                     onDeleteSession(selectedSession.id);
                     setSelectedSession(null);
+                    feedback.info('Sessão excluída do histórico.');
                   }
                 }}
                 className="h-11 px-3.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/50 rounded-xl text-xs font-semibold transition active:scale-95 flex items-center gap-1.5"

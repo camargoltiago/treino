@@ -10,6 +10,8 @@ import { Navbar, TabType } from './components/Navbar';
 import { RestTimer } from './components/RestTimer';
 import { ExerciseGuideModal } from './components/ExerciseGuideModal';
 import { FinishWorkoutModal } from './components/FinishWorkoutModal';
+import { FeedbackOverlay } from './components/FeedbackOverlay';
+import { feedback } from './services/feedback';
 
 import { TodayView } from './views/TodayView';
 import { WorkoutListView } from './views/WorkoutListView';
@@ -192,7 +194,7 @@ export const App: React.FC = () => {
   };
 
   // Funções da Sessão de Treino
-  const handleStartWorkout = (workoutId: WorkoutId) => {
+  const handleStartWorkout = async (workoutId: WorkoutId) => {
     const plan = workouts[workoutId] || WORKOUTS_DATA[workoutId];
     if (!plan) return;
 
@@ -201,9 +203,13 @@ export const App: React.FC = () => {
         setCurrentTab('workouts');
         return;
       }
-      if (!window.confirm('Existe um treino em andamento. Deseja cancelar para iniciar este novo?')) {
-        return;
-      }
+      const confirmed = await feedback.confirm({
+        title: 'Treino em Andamento',
+        message: 'Existe um treino em andamento. Deseja cancelar para iniciar este novo?',
+        variant: 'warning',
+        confirmText: 'Iniciar Novo'
+      });
+      if (!confirmed) return;
     }
 
     // Buscar referências de cargas passadas
@@ -279,11 +285,11 @@ export const App: React.FC = () => {
 
     if (!set.completed) {
       if (set.weightKg === '' || isNaN(Number(set.weightKg)) || Number(set.weightKg) < 0) {
-        alert('Digite a carga em kg antes de concluir (0 para peso corporal).');
+        feedback.warning('Digite a carga em kg antes de concluir (0 para peso corporal).');
         return;
       }
       if (set.reps === '' || isNaN(Number(set.reps)) || Number(set.reps) < 0) {
-        alert('Digite as repetições realizadas antes de concluir.');
+        feedback.warning('Digite as repetições realizadas antes de concluir.');
         return;
       }
 
@@ -356,7 +362,7 @@ export const App: React.FC = () => {
     setActiveSession(updated);
   };
 
-  const handleToggleExerciseComplete = (exerciseId: string) => {
+  const handleToggleExerciseComplete = async (exerciseId: string) => {
     if (!activeSession) return;
     const updated = { ...activeSession };
     const ex = updated.exercises.find(e => e.id === exerciseId);
@@ -367,9 +373,13 @@ export const App: React.FC = () => {
       const plan = workouts[activeSession.workoutId] || WORKOUTS_DATA[activeSession.workoutId];
       const planned = plan?.exercises.find(e => e.id === exerciseId)?.sets || 3;
       if (done < planned) {
-        if (!window.confirm(`Você fez ${done} de ${planned} séries. Concluir exercício com a contagem real?`)) {
-          return;
-        }
+        const confirmed = await feedback.confirm({
+          title: 'Séries Pendentes',
+          message: `Você fez ${done} de ${planned} séries previstas. Concluir exercício com a contagem real?`,
+          variant: 'primary',
+          confirmText: 'Concluir'
+        });
+        if (!confirmed) return;
       }
       ex.completed = true;
     } else {
@@ -420,13 +430,21 @@ export const App: React.FC = () => {
     skipTimer();
     setShowFinishModal(false);
     setCurrentTab('history');
+    feedback.success('Treino concluído com sucesso!');
   };
 
-  const handleCancelWorkout = () => {
-    if (window.confirm('Cancelar este treino? Todos os registros desta sessão em andamento serão descartados.')) {
+  const handleCancelWorkout = async () => {
+    const confirmed = await feedback.confirm({
+      title: 'Cancelar Treino?',
+      message: 'Todos os registros desta sessão em andamento serão descartados.',
+      variant: 'danger',
+      confirmText: 'Sim, Cancelar'
+    });
+    if (confirmed) {
       setActiveSession(null);
       skipTimer();
       setCurrentTab('today');
+      feedback.info('Treino cancelado.');
     }
   };
 
@@ -469,18 +487,18 @@ export const App: React.FC = () => {
 
       if (loadedWorkouts && Object.keys(loadedWorkouts).length > 0) {
         setWorkouts(loadedWorkouts);
-        alert(`Sucesso! ${Object.keys(loadedWorkouts).length} treinos importados.`);
+        feedback.success(`Sucesso! ${Object.keys(loadedWorkouts).length} treinos importados.`);
       } else {
-        alert('Arquivo JSON de treinos inválido ou vazio.');
+        feedback.error('Arquivo JSON de treinos inválido ou vazio.');
       }
     } catch (e) {
-      alert('Erro ao processar o arquivo JSON de treinos.');
+      feedback.error('Erro ao processar o arquivo JSON de treinos.');
     }
   };
 
   const handleResetWorkoutsToDefault = () => {
     setWorkouts({ ...WORKOUTS_DATA });
-    alert('Treinos restaurados para os padrões originais (Treino A, B e C).');
+    feedback.success('Treinos restaurados para os padrões originais (Treino A, B e C).');
   };
 
   // Análise de Recuperação Muscular
@@ -608,6 +626,9 @@ export const App: React.FC = () => {
         onConfirm={handleConfirmFinishWorkout}
         onCancel={() => setShowFinishModal(false)}
       />
+
+      {/* Overlay Global de Toasts e Confirmações Estilizadas */}
+      <FeedbackOverlay />
 
     </div>
   );
