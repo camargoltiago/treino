@@ -4,7 +4,6 @@ import { WorkoutSession, WorkoutPlan } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 import { StorageService, STORAGE_KEY } from '../services/storage';
 import { feedback } from '../services/feedback';
-import { vibrateDevice } from '../services/audio';
 
 interface HistoryBackupViewProps {
   history: WorkoutSession[];
@@ -252,32 +251,6 @@ export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
         )}
       </div>
 
-      {/* BOTÃO PROVISÓRIO DE TESTE DE VIBRAÇÃO */}
-      <div className="bg-dark-card border border-dark-border rounded-3xl p-5 shadow-xl space-y-3">
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">Diagnóstico de Hardware</span>
-          <h3 className="text-base font-extrabold text-white mt-0.5">Teste de Vibração do Celular</h3>
-          <p className="text-xs text-slate-400">Clique para testar se o motor de vibração físico responde diretamente ao toque.</p>
-        </div>
-
-        <button
-          onClick={() => {
-            if (typeof navigator === 'undefined' || !('vibrate' in navigator)) {
-              feedback.error('Seu aparelho/navegador NÃO suporta a API de vibração (no iPhone/iOS a Apple restringe vibrações web).');
-              return;
-            }
-            const ok = vibrateDevice(1000);
-            if (ok) {
-              feedback.success('Vibração de 1 segundo disparada com sucesso!');
-            } else {
-              feedback.warning('Comando de vibração enviado, mas o sistema pode ter silenciado.');
-            }
-          }}
-          className="w-full h-12 bg-cyan-600 hover:bg-cyan-500 text-white font-black rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition active:scale-95"
-        >
-          <span>🧪 Testar Vibração do Celular (1s)</span>
-        </button>
-      </div>
 
       {/* SEÇÃO 3: BACKUP COMPLETO DO APP */}
       <div className="bg-dark-card border border-dark-border rounded-3xl p-5 shadow-xl space-y-4">

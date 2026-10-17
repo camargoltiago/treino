@@ -20,33 +20,52 @@ function getAudioContext(): AudioContext | null {
 }
 
 /**
- * Toca um bip curto de contagem regressiva nos segundos 3, 2 e 1
+ * Vibra o celular (padrão único longo ou pulsos)
+ * Retorna true se a chamada foi aceita pelo navegador
+ */
+export function vibrateDevice(durationMs: number | number[] = 150): boolean {
+  if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
+    try {
+      return navigator.vibrate(durationMs);
+    } catch (e) {
+      console.warn('Vibração não permitida pelo navegador:', e);
+      return false;
+    }
+  }
+  return false;
+}
+
+/**
+ * Toca um bip curto de contagem regressiva e vibra nos segundos 3, 2 e 1
  */
 export function playWarningBeep(enabled: boolean = true) {
-  if (!enabled) return;
+  if (enabled) {
+    try {
+      const ctx = getAudioContext();
+      if (ctx) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
 
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
+        osc.type = 'sine';
+        // Bip curto de preparação (750 Hz)
+        osc.frequency.setValueAtTime(750, ctx.currentTime);
 
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
 
-    osc.type = 'sine';
-    // Bip curto de preparação (750 Hz)
-    osc.frequency.setValueAtTime(750, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
 
-    gain.gain.setValueAtTime(0.25, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start();
-    osc.stop(ctx.currentTime + 0.12);
-  } catch (err) {
-    console.warn('Áudio de aviso bloqueado ou não suportado:', err);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      }
+    } catch (err) {
+      console.warn('Áudio de aviso bloqueado ou não suportado:', err);
+    }
   }
+
+  // Vibração rápida de preparação (150ms) nos segundos 3, 2 e 1
+  vibrateDevice(150);
 }
 
 /**
@@ -81,27 +100,11 @@ export function playTimerBeep(enabled: boolean = true) {
 }
 
 /**
- * Vibra o celular (padrão único longo ou pulsos)
- * Retorna true se a chamada foi aceita pelo navegador
- */
-export function vibrateDevice(durationMs: number | number[] = 1000): boolean {
-  if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
-    try {
-      return navigator.vibrate(durationMs);
-    } catch (e) {
-      console.warn('Vibração não permitida pelo navegador:', e);
-      return false;
-    }
-  }
-  return false;
-}
-
-/**
  * Função combinada ao finalizar o descanso (segundo 0):
- * Toca o som esportivo + 1 vibração longa de 1 segundo (sem push notification)
+ * Toca o som esportivo + 1 vibração longa e contínua de 800ms
  */
 export function notifyTimerFinished(exerciseName: string = '', soundEnabled: boolean = true) {
   playTimerBeep(soundEnabled);
-  // 1 vibração longa apenas (1000ms = 1 segundo)
-  vibrateDevice(1000);
+  // 1 vibração longa e contínua de 800ms no zero
+  vibrateDevice(800);
 }
