@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Crie um aplicativo web **funcional**, mobile-first, para acompanhar meu treino de hipertrofia e pump. Entregue o código em **um arquivo `index.html`**, usando **HTML5, Tailwind CSS via CDN e JavaScript puro**. Não crie apenas um mockup: todos os controles precisam funcionar. Não use backend, autenticação ou banco remoto. Os dados devem persistir no **`localStorage`** do navegador.
+Crie um aplicativo web **funcional**, mobile-first, para acompanhar meu treino de hipertrofia e pump. Entregue o código em **um arquivo `index.html`**, usando **HTML5, Tailwind CSS via CDN e JavaScript puro**. Não crie apenas um mockup: todos os controles precisam funcionar. Não use backend, autenticação ou banco remoto. Os dados devem persistir no **`localStorage`** do navegador
 
 O aplicativo deve funcionar em desktop e celular, com interface moderna, escura (dark mode por padrão), acessível, limpa e prática de operar durante o treino. Utilize Tailwind CSS para o visual; ícones podem ser SVG inline ou biblioteca via CDN. Não dependa de build, Node.js ou frameworks.
 
@@ -12,44 +12,44 @@ Cadastrar exatamente os exercícios, séries e faixas de repetições abaixo, na
 
 ### Treino A — Segunda-feira — Upper Body (Hipertrofia)
 
-| ID | Exercício | Séries previstas | Repetições por série | Descanso | Observações |
-|---|---|---:|---|---|---|
-| A1 | Supino inclinado com halteres | 3 | 8–12 | 120 s (até 180 s se necessário) | Peito superior; descida controlada |
-| A2 | Puxada frontal na máquina | 3 | 8–12 | 120 s (até 180 s se necessário) | Costas; evitar balanço do tronco |
-| A3 | Supino reto com barra | 3 | 8–10 | 120 s (até 180 s se necessário) | Peito; amplitude segura |
-| A4 | Remada sentada no cabo | 3 | 10–12 | 120 s (até 180 s se necessário) | Costas; não impulsionar com lombar |
-| A5 | Elevação lateral com halteres | 3 | 12–15 | 60–90 s | Ombros; controlar descida |
-| A6 | Rosca direta com barra | 3 | 10–12 | Bi-set com A7 | Bíceps |
-| A7 | Tríceps pulley com barra V | 3 | 10–15 | 60–90 s após o par | Tríceps |
+| ID  | Exercício                     | Séries previstas | Repetições por série | Descanso                        | Observações                        |
+| --- | ----------------------------- | ---------------: | -------------------- | ------------------------------- | ---------------------------------- |
+| A1  | Supino inclinado com halteres |                3 | 8–12                 | 120 s (até 180 s se necessário) | Peito superior; descida controlada |
+| A2  | Puxada frontal na máquina     |                3 | 8–12                 | 120 s (até 180 s se necessário) | Costas; evitar balanço do tronco   |
+| A3  | Supino reto com barra         |                3 | 8–10                 | 120 s (até 180 s se necessário) | Peito; amplitude segura            |
+| A4  | Remada sentada no cabo        |                3 | 10–12                | 120 s (até 180 s se necessário) | Costas; não impulsionar com lombar |
+| A5  | Elevação lateral com halteres |                3 | 12–15                | 60–90 s                         | Ombros; controlar descida          |
+| A6  | Rosca direta com barra        |                3 | 10–12                | Bi-set com A7                   | Bíceps                             |
+| A7  | Tríceps pulley com barra V    |                3 | 10–15                | 60–90 s após o par              | Tríceps                            |
 
 **Bi-set A6 + A7:** fazer uma série de rosca direta e uma de tríceps pulley em sequência, sem descanso programado entre elas; descansar 60–90 segundos depois do par. Repetir 3 vezes. Total: **21 séries previstas**.
 
 ### Treino B — Quarta-feira — Lower Body (Hipertrofia)
 
-| ID | Exercício | Séries previstas | Repetições por série | Descanso | Observações |
-|---|---|---:|---|---|---|
-| B1 | Agachamento completo com barra | 3 | 6–10 | 120–180 s | Técnica e amplitude segura |
-| B2 | Leg press 45 graus | 3 | 10–12 | 120–180 s | Controlar descida; não tirar quadril do banco |
-| B3 | Levantamento terra romeno com barra | 3 | 8–12 | 120–180 s | Quadril para trás; coluna neutra |
-| B4 | Cadeira extensora | 3 | 12–15 | 60–90 s | Drop-set opcional na última série |
-| B5 | Mesa flexora deitada | 3 | 10–15 | 60–90 s | Controlar retorno |
-| B6 | Panturrilha em pé na máquina | 4 | 12–20 | 60–90 s | Amplitude controlada |
-| B7 | Abdominal na polia | 3 | 12–15 | 60–90 s | Flexionar tronco, sem puxar com braços |
+| ID  | Exercício                           | Séries previstas | Repetições por série | Descanso  | Observações                                   |
+| --- | ----------------------------------- | ---------------: | -------------------- | --------- | --------------------------------------------- |
+| B1  | Agachamento completo com barra      |                3 | 6–10                 | 120–180 s | Técnica e amplitude segura                    |
+| B2  | Leg press 45 graus                  |                3 | 10–12                | 120–180 s | Controlar descida; não tirar quadril do banco |
+| B3  | Levantamento terra romeno com barra |                3 | 8–12                 | 120–180 s | Quadril para trás; coluna neutra              |
+| B4  | Cadeira extensora                   |                3 | 12–15                | 60–90 s   | Drop-set opcional na última série             |
+| B5  | Mesa flexora deitada                |                3 | 10–15                | 60–90 s   | Controlar retorno                             |
+| B6  | Panturrilha em pé na máquina        |                4 | 12–20                | 60–90 s   | Amplitude controlada                          |
+| B7  | Abdominal na polia                  |                3 | 12–15                | 60–90 s   | Flexionar tronco, sem puxar com braços        |
 
 **Drop-set B4:** na última série, permitir marcar a execução de um drop-set opcional, reduzindo a carga aproximadamente 25–30% e fazendo repetições adicionais controladas. Registrar o drop-set separadamente para não confundir com as 3 séries previstas. Total: **22 séries previstas**, excluindo a série adicional opcional do drop-set.
 
 ### Treino C — Sexta-feira — Full Body (Pump)
 
-| ID | Exercício | Séries previstas | Repetições por série | Descanso | Observações |
-|---|---|---:|---|---|---|
-| C1 | Leg press horizontal | 3 | 10–15 | 90–120 s | Quadríceps e glúteos |
-| C2 | Cadeira flexora sentada | 3 | 12–15 | 60–90 s | Posteriores de coxa |
-| C3 | Supino reto na máquina | 3 | 10–12 | 90–120 s | Peito |
-| C4 | Remada articulada na máquina | 3 | 10–12 | 90–120 s | Costas |
-| C5 | Elevação lateral na polia | 3 | 12–20 | 60–90 s | Deltoides laterais |
-| C6 | Rosca martelo com corda | 2 | 12–15 | Bi-set com C7 | Bíceps e braquial |
-| C7 | Tríceps corda na polia | 2 | 12–15 | 60–90 s após o par | Tríceps |
-| C8 | Panturrilha sentada | 3 | 12–20 | 60–90 s | Panturrilhas |
+| ID  | Exercício                    | Séries previstas | Repetições por série | Descanso           | Observações          |
+| --- | ---------------------------- | ---------------: | -------------------- | ------------------ | -------------------- |
+| C1  | Leg press horizontal         |                3 | 10–15                | 90–120 s           | Quadríceps e glúteos |
+| C2  | Cadeira flexora sentada      |                3 | 12–15                | 60–90 s            | Posteriores de coxa  |
+| C3  | Supino reto na máquina       |                3 | 10–12                | 90–120 s           | Peito                |
+| C4  | Remada articulada na máquina |                3 | 10–12                | 90–120 s           | Costas               |
+| C5  | Elevação lateral na polia    |                3 | 12–20                | 60–90 s            | Deltoides laterais   |
+| C6  | Rosca martelo com corda      |                2 | 12–15                | Bi-set com C7      | Bíceps e braquial    |
+| C7  | Tríceps corda na polia       |                2 | 12–15                | 60–90 s após o par | Tríceps              |
+| C8  | Panturrilha sentada          |                3 | 12–20                | 60–90 s            | Panturrilhas         |
 
 **Bi-set C6 + C7:** executar uma série de cada exercício sem descanso programado entre eles; descansar 60–90 segundos após o par. Repetir 2 vezes. Total: **22 séries previstas**.
 
