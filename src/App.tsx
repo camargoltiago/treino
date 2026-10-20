@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { WorkoutId, WorkoutSession, TimerState, WorkoutPlan } from './types';
+import { WorkoutId, WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings } from './types';
 import { WORKOUTS_DATA } from './data/workouts';
 import { StorageService } from './services/storage';
 import { notifyTimerFinished, playWarningBeep } from './services/audio';
@@ -19,10 +19,12 @@ import { ActiveWorkoutView } from './views/ActiveWorkoutView';
 import { MuscleRecoveryView } from './views/MuscleRecoveryView';
 import { ProgressView } from './views/ProgressView';
 import { HistoryBackupView } from './views/HistoryBackupView';
+import { NutritionView } from './views/NutritionView';
 
 export const App: React.FC = () => {
   // Estado carregado do localStorage
   const initialData = StorageService.load();
+  const initialNutrition = StorageService.loadNutrition();
 
   const [currentTab, setCurrentTab] = useState<TabType>('today');
   const [activeSession, setActiveSession] = useState<WorkoutSession | null>(initialData.activeSession);
@@ -30,6 +32,61 @@ export const App: React.FC = () => {
   const [workouts, setWorkouts] = useState<Record<string, WorkoutPlan>>(initialData.workouts || { ...WORKOUTS_DATA });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(initialData.soundEnabled);
   const [theme, setTheme] = useState<'dark' | 'light'>(initialData.theme || 'dark');
+
+  // Estados de Nutrição & Calorias
+  const [meals, setMeals] = useState<MealLog[]>(initialNutrition.meals);
+  const [goals, setGoals] = useState<NutritionGoals>(initialNutrition.goals);
+  const [waterLogs, setWaterLogs] = useState<Record<string, number>>(initialNutrition.waterLogs);
+  const [aiSettings, setAiSettings] = useState<AiNutritionSettings>(initialNutrition.deepseek);
+
+  // Manipuladores de Nutrição
+  const handleSaveMeal = (newMeal: MealLog) => {
+    setMeals((prev) => {
+      const updated = [newMeal, ...prev];
+      StorageService.saveMeals(updated);
+      return updated;
+    });
+  };
+
+  const handleDeleteMeal = (mealId: string) => {
+    setMeals((prev) => {
+      const updated = prev.filter((m) => m.id !== mealId);
+      StorageService.saveMeals(updated);
+      return updated;
+    });
+  };
+
+  const handleUpdateWater = (date: string, amountMl: number) => {
+    setWaterLogs((prev) => {
+      const updated = { ...prev, [date]: amountMl };
+      StorageService.saveWater(updated);
+      return updated;
+    });
+  };
+
+  const handleSaveNutritionSettings = (newSettings: AiNutritionSettings, newGoals: NutritionGoals) => {
+    setAiSettings(newSettings);
+    setGoals(newGoals);
+    StorageService.saveAiSettings(newSettings);
+    StorageService.saveGoals(newGoals);
+  };
+
+  const handleRestoreNutrition = (nutrition: any) => {
+    if (nutrition) {
+      if (Array.isArray(nutrition.meals)) {
+        setMeals(nutrition.meals);
+        StorageService.saveMeals(nutrition.meals);
+      }
+      if (nutrition.goals) {
+        setGoals(nutrition.goals);
+        StorageService.saveGoals(nutrition.goals);
+      }
+      if (nutrition.waterLogs) {
+        setWaterLogs(nutrition.waterLogs);
+        StorageService.saveWater(nutrition.waterLogs);
+      }
+    }
+  };
 
   // Aplicar tema no elemento raiz do documento
   useEffect(() => {
@@ -502,6 +559,23 @@ export const App: React.FC = () => {
   // Análise de Recuperação Muscular
   const recoveryData = calculateMuscleRecovery(history);
 
+  // Resumo de Nutrição para exibição no TodayView
+  const getTodayDateStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const todayDateStr = getTodayDateStr();
+  const todayMeals = meals.filter((m) => m.date === todayDateStr);
+  const todayCalories = todayMeals.reduce((acc, m) => acc + (m.totalCalories || 0), 0);
+  const nutritionSummary = {
+    consumed: todayCalories,
+    goal: goals.calories,
+    remaining: goals.calories - todayCalories
+  };
+
   return (
     <div className="min-h-screen bg-dark-bg text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       
@@ -526,8 +600,22 @@ export const App: React.FC = () => {
             workouts={workouts}
             recovery={recoveryData.muscles}
             overallRecoveryPercent={recoveryData.overallPercent}
+            nutritionSummary={nutritionSummary}
             onStartWorkout={handleStartWorkout}
             onNavigateTab={(tab) => setCurrentTab(tab)}
+          />
+        )}
+
+        {currentTab === 'nutrition' && (
+          <NutritionView
+            meals={meals}
+            goals={goals}
+            waterLogs={waterLogs}
+            deepseekSettings={aiSettings}
+            onSaveMeal={handleSaveMeal}
+            onDeleteMeal={handleDeleteMeal}
+            onUpdateWater={handleUpdateWater}
+            onSaveSettings={handleSaveNutritionSettings}
           />
         )}
 
@@ -583,12 +671,15 @@ export const App: React.FC = () => {
               setActiveSession(newActive);
             }}
             onRestoreWorkouts={(newWorkouts) => setWorkouts(newWorkouts)}
+            onRestoreNutrition={handleRestoreNutrition}
             onResetWorkoutsToDefault={handleResetWorkoutsToDefault}
             onResetAll={() => {
               StorageService.clearAll();
               setHistory([]);
               setActiveSession(null);
               setWorkouts({ ...WORKOUTS_DATA });
+              setMeals([]);
+              setWaterLogs({});
               skipTimer();
               setCurrentTab('today');
             }}

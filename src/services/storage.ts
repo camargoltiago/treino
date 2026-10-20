@@ -1,8 +1,30 @@
-import { WorkoutSession, TimerState, WorkoutPlan } from '../types';
+import { WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings, DeepSeekSettings } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 
 export const STORAGE_KEY = 'meu_treino_hibrido_v2';
 export const WORKOUTS_STORAGE_KEY = 'meu_treino_hibrido_workouts_v2';
+export const NUTRITION_STORAGE_KEY = 'meu_treino_hibrido_nutrition_v2';
+export const NUTRITION_GOALS_KEY = 'meu_treino_nutrition_goals_v2';
+export const AI_SETTINGS_KEY = 'meu_treino_ai_nutrition_settings_v3';
+export const DEEPSEEK_SETTINGS_KEY = 'meu_treino_deepseek_settings';
+export const WATER_STORAGE_KEY = 'meu_treino_water_v2';
+
+export const DEFAULT_NUTRITION_GOALS: NutritionGoals = {
+  calories: 2200,
+  protein: 160,
+  carbs: 220,
+  fat: 65,
+  waterMl: 2500
+};
+
+export const DEFAULT_AI_SETTINGS: AiNutritionSettings = {
+  apiKey: '',
+  model: 'gemini-2.5-flash',
+  provider: 'gemini'
+};
+
+export const DEFAULT_DEEPSEEK_SETTINGS = DEFAULT_AI_SETTINGS;
+
 
 export interface AppStoredData {
   version: string;
@@ -111,8 +133,96 @@ export const StorageService = {
     }
   },
 
-  // Exportar backup completo (histórico + treinos)
-  exportFullJSON(history: WorkoutSession[], activeSession: WorkoutSession | null, workouts: Record<string, WorkoutPlan>) {
+  // Carregar dados de Nutrição (refeições, metas, água, settings de IA)
+  loadNutrition(): {
+    meals: MealLog[];
+    goals: NutritionGoals;
+    waterLogs: Record<string, number>;
+    deepseek: DeepSeekSettings;
+  } {
+    let meals: MealLog[] = [];
+    let goals: NutritionGoals = { ...DEFAULT_NUTRITION_GOALS };
+    let waterLogs: Record<string, number> = {};
+    let deepseek: DeepSeekSettings = { ...DEFAULT_DEEPSEEK_SETTINGS };
+
+    try {
+      const rawMeals = localStorage.getItem(NUTRITION_STORAGE_KEY);
+      if (rawMeals) {
+        const parsed = JSON.parse(rawMeals);
+        if (Array.isArray(parsed)) meals = parsed;
+      }
+
+      const rawGoals = localStorage.getItem(NUTRITION_GOALS_KEY);
+      if (rawGoals) {
+        const parsed = JSON.parse(rawGoals);
+        if (parsed && typeof parsed === 'object') {
+          goals = { ...DEFAULT_NUTRITION_GOALS, ...parsed };
+        }
+      }
+
+      const rawWater = localStorage.getItem(WATER_STORAGE_KEY);
+      if (rawWater) {
+        const parsed = JSON.parse(rawWater);
+        if (parsed && typeof parsed === 'object') waterLogs = parsed;
+      }
+
+      const rawAi = localStorage.getItem(AI_SETTINGS_KEY) || localStorage.getItem(DEEPSEEK_SETTINGS_KEY);
+      if (rawAi) {
+        const parsed = JSON.parse(rawAi);
+        if (parsed && typeof parsed === 'object') {
+          deepseek = { ...DEFAULT_AI_SETTINGS, ...parsed };
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao carregar dados de nutrição:', err);
+    }
+
+    return { meals, goals, waterLogs, deepseek };
+  },
+
+  saveMeals(meals: MealLog[]) {
+    try {
+      localStorage.setItem(NUTRITION_STORAGE_KEY, JSON.stringify(meals));
+    } catch (err) {
+      console.error('Erro ao salvar refeições:', err);
+    }
+  },
+
+  saveGoals(goals: NutritionGoals) {
+    try {
+      localStorage.setItem(NUTRITION_GOALS_KEY, JSON.stringify(goals));
+    } catch (err) {
+      console.error('Erro ao salvar metas de nutrição:', err);
+    }
+  },
+
+  saveWater(waterLogs: Record<string, number>) {
+    try {
+      localStorage.setItem(WATER_STORAGE_KEY, JSON.stringify(waterLogs));
+    } catch (err) {
+      console.error('Erro ao salvar registro de água:', err);
+    }
+  },
+
+  saveAiSettings(settings: AiNutritionSettings) {
+    try {
+      localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(settings));
+    } catch (err) {
+      console.error('Erro ao salvar configurações de IA:', err);
+    }
+  },
+
+  saveDeepSeekSettings(settings: AiNutritionSettings) {
+    this.saveAiSettings(settings);
+  },
+
+  // Exportar backup completo (histórico + treinos + nutrição)
+  exportFullJSON(
+    history: WorkoutSession[],
+    activeSession: WorkoutSession | null,
+    workouts: Record<string, WorkoutPlan>,
+    nutrition?: { meals: MealLog[]; goals: NutritionGoals; waterLogs: Record<string, number> }
+  ) {
     const payload = {
       app: 'MuscleTrack — Treino Híbrido',
       exportedAt: new Date().toISOString(),
@@ -120,7 +230,8 @@ export const StorageService = {
       type: 'full_backup',
       workouts,
       history,
-      activeSession
+      activeSession,
+      nutrition: nutrition || this.loadNutrition()
     };
 
     this.downloadJSON(payload, `muscletrack_backup_completo_${new Date().toISOString().split('T')[0]}.json`);
@@ -155,5 +266,7 @@ export const StorageService = {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(WORKOUTS_STORAGE_KEY);
     localStorage.removeItem('meu_treino_hibrido_v1');
+    localStorage.removeItem(NUTRITION_STORAGE_KEY);
+    localStorage.removeItem(WATER_STORAGE_KEY);
   }
 };

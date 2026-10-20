@@ -96,3 +96,6 @@ export interface MuscleRecoveryStatus {
   lastTrainedDays: number | null;
   suggestedRestHours: number;
 }
+
+export * from './nutrition';
+

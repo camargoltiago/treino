@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, ArrowRight, Activity, Flame, Calendar, Dumbbell } from 'lucide-react';
 import { WorkoutSession, WorkoutId, MuscleRecoveryStatus, MuscleGroup, WorkoutPlan } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
+import { TabType } from '../components/Navbar';
 
 interface TodayViewProps {
   activeSession: WorkoutSession | null;
@@ -9,8 +10,13 @@ interface TodayViewProps {
   workouts: Record<string, WorkoutPlan>;
   recovery: Record<MuscleGroup, MuscleRecoveryStatus>;
   overallRecoveryPercent: number;
+  nutritionSummary?: {
+    consumed: number;
+    goal: number;
+    remaining: number;
+  };
   onStartWorkout: (id: WorkoutId) => void;
-  onNavigateTab: (tab: 'workouts' | 'recovery' | 'progress' | 'history') => void;
+  onNavigateTab: (tab: TabType) => void;
 }
 
 export const TodayView: React.FC<TodayViewProps> = ({
@@ -19,6 +25,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
   workouts,
   recovery,
   overallRecoveryPercent,
+  nutritionSummary,
   onStartWorkout,
   onNavigateTab
 }) => {
@@ -138,6 +145,53 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 <span>Iniciar Treino →</span>
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* SEÇÃO: Nutrição & Calorias de Hoje */}
+      {nutritionSummary && (
+        <div className="bg-dark-card border border-dark-border rounded-3xl p-5 shadow-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-mint-400">Nutrição Diária</span>
+              <h3 className="text-base font-extrabold text-white">Controle Calórico</h3>
+            </div>
+            <button
+              onClick={() => onNavigateTab('nutrition')}
+              className="text-xs text-mint-400 hover:text-mint-300 font-bold flex items-center gap-1 transition"
+            >
+              <span>Abrir Dieta</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div
+            onClick={() => onNavigateTab('nutrition')}
+            className="cursor-pointer bg-dark-surface p-4 rounded-2xl border border-dark-border hover:border-mint-500/40 transition-all flex items-center justify-between gap-3 group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-mint-500/15 text-mint-400 flex items-center justify-center font-bold border border-mint-500/30 group-hover:scale-105 transition-transform">
+                <Flame className="w-5 h-5 text-mint-400" />
+              </div>
+              <div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-base font-black text-white">{nutritionSummary.consumed}</span>
+                  <span className="text-xs text-slate-400 font-medium">/ {nutritionSummary.goal} kcal</span>
+                </div>
+                <span className="text-[11px] text-slate-400 block">
+                  {nutritionSummary.remaining >= 0
+                    ? `Restam ${nutritionSummary.remaining} kcal hoje`
+                    : `Excedeu ${Math.abs(nutritionSummary.remaining)} kcal`}
+                </span>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="text-xs font-bold text-mint-400 bg-mint-500/10 px-2.5 py-1 rounded-xl border border-mint-500/20 group-hover:bg-mint-500 group-hover:text-dark-bg transition-all">
+                + Registrar
+              </span>
+            </div>
           </div>
         </div>
       )}

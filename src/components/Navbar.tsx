@@ -1,7 +1,7 @@
 import React from 'react';
-import { Home, Dumbbell, Activity, TrendingUp, Clock } from 'lucide-react';
+import { Home, Dumbbell, Activity, TrendingUp, Clock, Flame } from 'lucide-react';
 
-export type TabType = 'today' | 'workouts' | 'recovery' | 'progress' | 'history';
+export type TabType = 'today' | 'nutrition' | 'workouts' | 'recovery' | 'progress' | 'history';
 
 interface NavbarProps {
   currentTab: TabType;
@@ -12,8 +12,9 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, onChangeTab, hasActiveSession }) => {
   const tabs = [
     { id: 'today', label: 'Hoje', icon: Home },
-    { id: 'recovery', label: 'Músculos', icon: Activity },
+    { id: 'nutrition', label: 'Dieta', icon: Flame },
     { id: 'workouts', label: 'Treino', icon: Dumbbell, hasBadge: hasActiveSession },
+    { id: 'recovery', label: 'Músculos', icon: Activity },
     { id: 'progress', label: 'Evolução', icon: TrendingUp },
     { id: 'history', label: 'Histórico', icon: Clock }
   ];
@@ -23,7 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onChangeTab, hasActi
       className="fixed bottom-0 left-0 right-0 z-40 bg-dark-bg/95 backdrop-blur-xl border-t border-dark-border select-none shadow-[0_-10px_30px_rgba(0,0,0,0.7)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="max-w-md mx-auto grid grid-cols-5 h-16">
+      <div className="max-w-md mx-auto grid grid-cols-6 h-16">
         {tabs.map(tab => {
           const Icon = tab.icon;
           const isActive = currentTab === tab.id;

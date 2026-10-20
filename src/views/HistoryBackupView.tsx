@@ -14,6 +14,7 @@ interface HistoryBackupViewProps {
   onResetWorkoutsToDefault: () => void;
   onResetAll: () => void;
   activeSession: WorkoutSession | null;
+  onRestoreNutrition?: (nutrition: any) => void;
 }
 
 export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
@@ -24,7 +25,8 @@ export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
   onRestoreWorkouts,
   onResetWorkoutsToDefault,
   onResetAll,
-  activeSession
+  activeSession,
+  onRestoreNutrition
 }) => {
   const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(null);
   const workoutFileInputRef = useRef<HTMLInputElement>(null);
@@ -92,6 +94,11 @@ export const HistoryBackupView: React.FC<HistoryBackupViewProps> = ({
             onRestoreBackup(json.history, json.activeSession || null);
             if (json.workouts && typeof json.workouts === 'object') {
               onRestoreWorkouts(json.workouts);
+            }
+            if (json.nutrition) {
+              if (onRestoreNutrition) {
+                onRestoreNutrition(json.nutrition);
+              }
             }
             feedback.success('Backup restaurado com sucesso!');
           }
