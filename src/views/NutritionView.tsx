@@ -280,46 +280,57 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
       </div>
 
       {/* REGISTRO DE ÁGUA */}
-      <div className="p-4 rounded-3xl bg-dark-card border border-dark-border flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-            <Droplets className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-slate-200">Hidratação</span>
-              <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full">
-                {waterPercent}%
-              </span>
+      <div className="p-4 rounded-3xl bg-dark-card border border-dark-border space-y-3 overflow-hidden">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+              <Droplets className="w-4 h-4" />
             </div>
-            <p className="text-xs text-slate-400 font-semibold mt-0.5">
-              {currentWater} <span className="text-[10px] text-slate-500">/ {goals.waterMl} ml</span>
-            </p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-slate-200">Hidratação</span>
+                <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-full font-mono">
+                  {waterPercent}%
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 font-semibold truncate">
+                <strong className="text-white font-mono">{currentWater}</strong>
+                <span className="text-[10px] text-slate-500 font-medium"> / {goals.waterMl} ml</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            {currentWater > 0 && (
+              <button
+                onClick={() => handleAddWater(-250)}
+                className="px-2 py-1 text-xs font-bold text-slate-400 hover:text-slate-200 bg-dark-bg rounded-lg border border-dark-border transition-colors active:scale-95"
+                title="Remover 250ml"
+              >
+                -250
+              </button>
+            )}
+            <button
+              onClick={() => handleAddWater(250)}
+              className="px-2.5 py-1 text-xs font-bold text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 rounded-lg border border-sky-500/20 transition-all active:scale-95"
+            >
+              +250ml
+            </button>
+            <button
+              onClick={() => handleAddWater(500)}
+              className="px-2.5 py-1 text-xs font-bold text-sky-300 bg-sky-500/20 hover:bg-sky-500/30 rounded-lg border border-sky-500/30 transition-all active:scale-95"
+            >
+              +500ml
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {currentWater > 0 && (
-            <button
-              onClick={() => handleAddWater(-250)}
-              className="px-2.5 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-200 bg-dark-bg rounded-xl border border-dark-border transition-colors"
-              title="-250ml"
-            >
-              -250
-            </button>
-          )}
-          <button
-            onClick={() => handleAddWater(250)}
-            className="px-3 py-1.5 text-xs font-bold text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 rounded-xl border border-sky-500/20 transition-all active:scale-95"
-          >
-            +250ml
-          </button>
-          <button
-            onClick={() => handleAddWater(500)}
-            className="px-3 py-1.5 text-xs font-bold text-sky-300 bg-sky-500/20 hover:bg-sky-500/30 rounded-xl border border-sky-500/30 transition-all active:scale-95"
-          >
-            +500ml
-          </button>
+        {/* Barra de progresso visual */}
+        <div className="h-1.5 w-full bg-dark-bg rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-sky-500 to-cyan-400 rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(56,189,248,0.4)]"
+            style={{ width: `${waterPercent}%` }}
+          />
         </div>
       </div>
 

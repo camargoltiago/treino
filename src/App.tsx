@@ -576,6 +576,13 @@ export const App: React.FC = () => {
     remaining: goals.calories - todayCalories
   };
 
+  const todayWater = waterLogs[todayDateStr] || 0;
+  const waterSummary = {
+    consumed: todayWater,
+    goal: goals.waterMl,
+    percent: Math.min(100, Math.round((todayWater / goals.waterMl) * 100)) || 0
+  };
+
   return (
     <div className="min-h-screen bg-dark-bg text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       
@@ -601,6 +608,8 @@ export const App: React.FC = () => {
             recovery={recoveryData.muscles}
             overallRecoveryPercent={recoveryData.overallPercent}
             nutritionSummary={nutritionSummary}
+            waterSummary={waterSummary}
+            onAddWaterToday={(delta) => handleUpdateWater(todayDateStr, Math.max(0, todayWater + delta))}
             onStartWorkout={handleStartWorkout}
             onNavigateTab={(tab) => setCurrentTab(tab)}
           />
