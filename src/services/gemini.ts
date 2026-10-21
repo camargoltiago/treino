@@ -82,26 +82,56 @@ function normalizeAiResult(parsed: any): NutritionAiAnalysisResult {
 
 export const GeminiNutritionService = {
   /**
-   * Analisa a foto do prato usando a API multimodal do Google Gemini
+   * Analisa refeição de forma unificada:
+   * - Apenas Foto
+   * - Apenas Texto ou Áudio transcrito
+   * - Foto + Texto/Áudio juntos (para enriquecer com detalhes como "é pão integral", "frango com azeite")
    */
-  async analyzeMealFromImage(params: {
-    base64Image: string;
+  async analyzeMealUnified(params: {
+    base64Image?: string | null;
+    description?: string | null;
     apiKey: string;
     model?: string;
     mealHint?: string;
   }): Promise<NutritionAiAnalysisResult> {
-    const { base64Image, apiKey, model = DEFAULT_GEMINI_MODEL, mealHint } = params;
+    const { base64Image, description, apiKey, model = DEFAULT_GEMINI_MODEL, mealHint } = params;
 
     if (!apiKey || apiKey.trim() === '') {
       throw new Error('API Key do Gemini não configurada. Configure sua chave nas configurações de Nutrição.');
     }
 
-    const promptText = `Você é um nutricionista esportivo de precisão.
+    const hasImage = !!base64Image && base64Image.trim().length > 0;
+    const hasText = !!description && description.trim().length > 0;
+
+    if (!hasImage && !hasText) {
+      throw new Error('Forneça uma foto ou descreva o que comeu para a IA analisar.');
+    }
+
+    let promptText = `Você é um nutricionista esportivo de precisão.`;
+
+    if (hasImage && hasText) {
+      promptText += `
+O usuário enviou uma FOTO da refeição e também forneceu uma DESCRIÇÃO/OBSERVAÇÃO COMPLEMENTAR:
+"${description?.trim()}".
+${mealHint ? `Momento da refeição sugerido: ${mealHint}.` : ''}
+
+INSTRUÇÕES CRÍTICAS:
+1. Combine as informações visuais da foto com a descrição do usuário. Se o usuário especificou ingredientes específicos ou detalhes que a imagem não mostra claramente (ex: "é pão integral", "frango grelhado no azeite", "leite desnatado", "3 ovos mexidos"), dê prioridade e considere rigorosamente essas informações!
+2. Identifique cada item presente, estime as porções (em gramas ou unidades), calcule calorias (kcal), proteínas (g), carboidratos (g) e gorduras (g).`;
+    } else if (hasImage) {
+      promptText += `
 Analise os alimentos visíveis nesta foto de refeição${mealHint ? ` (Momento da refeição: ${mealHint})` : ''}.
-Identifique cada item presente no prato, estime a porção/peso aproximado (em gramas ou unidades), calcule calorias (kcal), proteínas (g), carboidratos (g) e gorduras (g).
+Identifique cada item presente no prato, estime a porção/peso aproximado (em gramas ou unidades), calcule calorias (kcal), proteínas (g), carboidratos (g) e gorduras (g).`;
+    } else {
+      promptText += `
+Analise os seguintes alimentos descritos pelo usuário: "${description?.trim()}"${mealHint ? ` (Refeição: ${mealHint})` : ''}.
+Identifique cada item, estime as porções, calcule calorias (kcal), proteínas (g), carboidratos (g) e gorduras (g).`;
+    }
+
+    promptText += `
 Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
 {
-  "name": "Nome resumido do prato (ex: Prato Feito com Frango, Arroz e Feijão)",
+  "name": "Nome resumido do prato",
   "items": [
     {
       "name": "Nome do alimento",
@@ -121,19 +151,22 @@ Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
 
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.trim())}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
 
+    const parts: any[] = [{ text: promptText }];
+
+    if (hasImage) {
+      parts.push({
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: base64Image
+        }
+      });
+    }
+
     const payload = {
       contents: [
         {
           role: 'user',
-          parts: [
-            { text: promptText },
-            {
-              inlineData: {
-                mimeType: 'image/jpeg',
-                data: base64Image
-              }
-            }
-          ]
+          parts
         }
       ],
       generationConfig: {
@@ -174,6 +207,23 @@ Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
   },
 
   /**
+   * Analisa a foto do prato usando a API multimodal do Google Gemini
+   */
+  async analyzeMealFromImage(params: {
+    base64Image: string;
+    apiKey: string;
+    model?: string;
+    mealHint?: string;
+  }): Promise<NutritionAiAnalysisResult> {
+    return this.analyzeMealUnified({
+      base64Image: params.base64Image,
+      apiKey: params.apiKey,
+      model: params.model,
+      mealHint: params.mealHint
+    });
+  },
+
+  /**
    * Analisa refeição descrita por texto
    */
   async analyzeMealFromText(params: {
@@ -182,79 +232,12 @@ Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
     model?: string;
     mealHint?: string;
   }): Promise<NutritionAiAnalysisResult> {
-    const { description, apiKey, model = DEFAULT_GEMINI_MODEL, mealHint } = params;
-
-    if (!apiKey || apiKey.trim() === '') {
-      throw new Error('API Key do Gemini não configurada.');
-    }
-
-    const promptText = `Você é um nutricionista esportivo de precisão.
-Analise os seguintes alimentos consumidos: "${description}"${mealHint ? ` (Refeição: ${mealHint})` : ''}.
-Estime as porções, calorias (kcal) e macronutrientes (proteínas, carboidratos, gorduras).
-Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
-{
-  "name": "Nome resumido da refeição",
-  "items": [
-    {
-      "name": "Nome do alimento",
-      "portion": "estimativa (ex: 2 unidades, 150g)",
-      "calories": 140,
-      "protein": 12,
-      "carbs": 1,
-      "fat": 10
-    }
-  ],
-  "totalCalories": 140,
-  "totalProtein": 12,
-  "totalCarbs": 1,
-  "totalFat": 10,
-  "notes": "Observação curta nutricional"
-}`;
-
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.trim())}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
-
-    const payload = {
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: promptText }]
-        }
-      ],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature: 0.2
-      }
-    };
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
+    return this.analyzeMealUnified({
+      description: params.description,
+      apiKey: params.apiKey,
+      model: params.model,
+      mealHint: params.mealHint
     });
-
-    if (!response.ok) {
-      let errorMsg = `Erro na API do Gemini (${response.status} ${response.statusText})`;
-      try {
-        const errorJson = await response.json();
-        if (errorJson.error?.message) {
-          errorMsg = `Gemini: ${errorJson.error.message}`;
-        }
-      } catch {}
-      throw new Error(errorMsg);
-    }
-
-    const data = await response.json();
-    const candidate = data.candidates?.[0];
-    const textOutput = candidate?.content?.parts?.[0]?.text;
-
-    if (!textOutput) {
-      throw new Error('A IA respondeu com conteúdo vazio.');
-    }
-
-    const parsedJson = extractJsonFromResponse(textOutput);
-    return normalizeAiResult(parsedJson);
   },
 
   /**

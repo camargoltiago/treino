@@ -473,6 +473,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
         }}
         targetDate={selectedDate}
         initialMealType={defaultMealType}
+        pastMeals={meals}
       />
 
       {/* MODAL CONFIGURAÇÕES DE NUTRIÇÃO & IA */}
