@@ -334,14 +334,14 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
         </div>
       </div>
 
-      {/* BOTÃO PRINCIPAL DE ADICIONAR COM IA */}
+      {/* BOTÃO PRINCIPAL DE ADICIONAR REFEIÇÃO */}
       <button
         type="button"
         onClick={() => openAddModalWith('almoco')}
         className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-mint-500 via-mint-400 to-emerald-400 text-dark-bg font-black text-sm shadow-[0_0_20px_rgba(0,229,153,0.4)] hover:shadow-[0_0_25px_rgba(0,229,153,0.6)] transition-all transform active:scale-[0.98] flex items-center justify-center gap-2.5"
       >
-        <Camera className="w-5 h-5 text-dark-bg" />
-        <span>Analisar Imagem com IA</span>
+        <Plus className="w-5 h-5 text-dark-bg stroke-[2.5]" />
+        <span>Registrar Refeição</span>
         <Sparkles className="w-4 h-4 text-dark-bg/80 animate-pulse" />
       </button>
 
