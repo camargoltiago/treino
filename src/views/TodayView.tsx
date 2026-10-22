@@ -1,6 +1,6 @@
 import React from 'react';
-import { Play, ArrowRight, Activity, Flame, Calendar, Dumbbell, Droplets } from 'lucide-react';
-import { WorkoutSession, WorkoutId, MuscleRecoveryStatus, MuscleGroup, WorkoutPlan } from '../types';
+import { Play, ArrowRight, Activity, Flame, Calendar, Dumbbell, Droplets, Sparkles, TrendingUp } from 'lucide-react';
+import { WorkoutSession, WorkoutId, MuscleRecoveryStatus, MuscleGroup, WorkoutPlan, WeeklyAssessment } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 import { TabType } from '../components/Navbar';
 
@@ -23,6 +23,8 @@ interface TodayViewProps {
   onAddWaterToday?: (deltaMl: number) => void;
   onStartWorkout: (id: WorkoutId) => void;
   onNavigateTab: (tab: TabType) => void;
+  onOpenAiCoach?: (initialTab?: 'assessment' | 'workout_creator') => void;
+  coachAssessment?: WeeklyAssessment | null;
 }
 
 export const TodayView: React.FC<TodayViewProps> = ({
@@ -35,7 +37,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
   waterSummary,
   onAddWaterToday,
   onStartWorkout,
-  onNavigateTab
+  onNavigateTab,
+  onOpenAiCoach,
+  coachAssessment
 }) => {
   const now = new Date();
   const hour = now.getHours();
@@ -156,6 +160,62 @@ export const TodayView: React.FC<TodayViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* SEÇÃO: Treinador IA (Raio-X Semanal + Montar Treino) */}
+      <div className="bg-gradient-to-br from-dark-surface via-dark-card to-dark-bg border border-mint-500/30 rounded-3xl p-5 shadow-2xl relative overflow-hidden space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-mint-600 to-mint-400 flex items-center justify-center text-slate-950 font-black shadow-mint-glow-sm">
+              <Sparkles className="w-5 h-5 fill-current" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-mint-400">Inteligência Artificial</span>
+                {coachAssessment && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-mint-500/15 text-mint-400 border border-mint-500/30 font-mono">
+                    Nota {coachAssessment.overallScore.toFixed(1)}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base font-extrabold text-white">Treinador IA</h3>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-300 leading-relaxed">
+          {coachAssessment
+            ? coachAssessment.headline
+            : 'Avalie sua semana completa de treino, dieta e hidratação ou monte novas rotinas personalizadas.'}
+        </p>
+
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <button
+            onClick={() => onOpenAiCoach?.('assessment')}
+            className="p-3 bg-dark-surface hover:bg-dark-border border border-dark-border hover:border-mint-500/40 rounded-2xl flex flex-col items-start gap-1 transition text-left group active:scale-95"
+          >
+            <div className="w-7 h-7 rounded-xl bg-mint-500/15 text-mint-400 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-white mt-1 group-hover:text-mint-400 transition-colors">
+              Raio-X Semanal
+            </span>
+            <span className="text-[10px] text-slate-400 leading-tight">Treino, calorias & água</span>
+          </button>
+
+          <button
+            onClick={() => onOpenAiCoach?.('workout_creator')}
+            className="p-3 bg-dark-surface hover:bg-dark-border border border-dark-border hover:border-mint-500/40 rounded-2xl flex flex-col items-start gap-1 transition text-left group active:scale-95"
+          >
+            <div className="w-7 h-7 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Dumbbell className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-white mt-1 group-hover:text-cyan-400 transition-colors">
+              Montar / Ajustar
+            </span>
+            <span className="text-[10px] text-slate-400 leading-tight">Fichas com IA</span>
+          </button>
+        </div>
+      </div>
 
       {/* SEÇÃO: Nutrição & Calorias de Hoje */}
       {nutritionSummary && (

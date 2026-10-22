@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, ChevronDown, ChevronUp, Info, Edit3, Plus } from 'lucide-react';
+import { Play, ChevronDown, ChevronUp, Info, Edit3, Plus, Sparkles } from 'lucide-react';
 import { WorkoutId, WorkoutSession, WorkoutPlan } from '../types';
 import { WorkoutEditorModal } from '../components/WorkoutEditorModal';
 
@@ -12,6 +12,7 @@ interface WorkoutListViewProps {
   onSaveWorkout: (workout: WorkoutPlan) => void;
   onDeleteWorkout: (id: string) => void;
   onAddWorkout: (workout: WorkoutPlan) => void;
+  onOpenAiCoach?: (initialTab?: 'assessment' | 'workout_creator', workoutId?: string) => void;
 }
 
 export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
@@ -22,7 +23,8 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
   onOpenGuide,
   onSaveWorkout,
   onDeleteWorkout,
-  onAddWorkout
+  onAddWorkout,
+  onOpenAiCoach
 }) => {
   const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
   const [editingWorkout, setEditingWorkout] = useState<WorkoutPlan | null>(null);
@@ -67,22 +69,35 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       
-      {/* Header com título e apenas o botão + Novo Treino */}
+      {/* Header com título e botões de ação */}
       <div className="border-b border-dark-border pb-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-mint-400">Rotina de Hipertrofia</span>
             <h2 className="text-xl sm:text-2xl font-black text-white mt-0.5">Meus Treinos</h2>
-            <p className="text-xs text-slate-400">Edite exercícios pelo ícone do lápis em cada card.</p>
+            <p className="text-xs text-slate-400">Personalize exercícios ou gere novas rotinas inteligentes.</p>
           </div>
 
-          <button
-            onClick={handleCreateNewWorkout}
-            className="h-10 px-4 bg-mint-500 hover:bg-mint-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-mint-glow-sm transition active:scale-95 shrink-0"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Novo Treino</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {onOpenAiCoach && (
+              <button
+                onClick={() => onOpenAiCoach('workout_creator')}
+                className="h-10 px-3 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-400 border border-cyan-500/30 font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+                title="Montar treino novo com IA"
+              >
+                <Sparkles className="w-3.5 h-3.5 fill-current" />
+                <span>Montar com IA</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleCreateNewWorkout}
+              className="h-10 px-3.5 bg-mint-500 hover:bg-mint-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-mint-glow-sm transition active:scale-95 shrink-0"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Novo Treino</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -136,14 +151,25 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
                     <p className="text-xs text-slate-400">{w.focus}</p>
                   </div>
 
-                  {/* Único Botão de Edição: O lápis no topo direito do card */}
-                  <button
-                    onClick={() => setEditingWorkout(w)}
-                    className="w-9 h-9 rounded-xl bg-dark-surface hover:bg-dark-cardHover border border-dark-border text-mint-400 hover:text-mint-300 transition flex items-center justify-center active:scale-95 shrink-0"
-                    title="Editar exercícios deste treino"
-                  >
-                    <Edit3 className="w-4 h-4 stroke-[2.2]" />
-                  </button>
+                  {/* Botões de Ação: Ajustar com IA & Editar Manualmente */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {onOpenAiCoach && (
+                      <button
+                        onClick={() => onOpenAiCoach('workout_creator', id)}
+                        className="w-9 h-9 rounded-xl bg-dark-surface hover:bg-dark-cardHover border border-dark-border text-cyan-400 hover:text-cyan-300 transition flex items-center justify-center active:scale-95"
+                        title="Ajustar este treino com Treinador IA"
+                      >
+                        <Sparkles className="w-4 h-4 fill-current" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setEditingWorkout(w)}
+                      className="w-9 h-9 rounded-xl bg-dark-surface hover:bg-dark-cardHover border border-dark-border text-mint-400 hover:text-mint-300 transition flex items-center justify-center active:scale-95"
+                      title="Editar exercícios deste treino manualmente"
+                    >
+                      <Edit3 className="w-4 h-4 stroke-[2.2]" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-dark-border/80 grid grid-cols-2 gap-2 text-xs text-slate-300">
@@ -244,6 +270,7 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
             setEditingWorkout(null);
           }}
           onClose={() => setEditingWorkout(null)}
+          onOpenAiCoach={onOpenAiCoach ? (id) => onOpenAiCoach('workout_creator', id) : undefined}
         />
       )}
 

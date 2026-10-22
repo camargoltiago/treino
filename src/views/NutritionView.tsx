@@ -20,6 +20,7 @@ interface NutritionViewProps {
   onDeleteMeal: (mealId: string) => void;
   onUpdateWater: (date: string, amountMl: number) => void;
   onSaveSettings: (settings: AiNutritionSettings, goals: NutritionGoals) => void;
+  onOpenAiCoach?: () => void;
 }
 
 export const NutritionView: React.FC<NutritionViewProps> = ({
@@ -30,7 +31,8 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
   onSaveMeal,
   onDeleteMeal,
   onUpdateWater,
-  onSaveSettings
+  onSaveSettings,
+  onOpenAiCoach
 }) => {
   // Data selecionada (padrão: hoje em formato YYYY-MM-DD local)
   const getTodayDateStr = () => {
@@ -163,14 +165,27 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
           )}
         </div>
 
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="p-2 text-slate-400 hover:text-mint-400 hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold"
-          title="Configurações de IA & Metas"
-        >
-          <Settings2 className="w-4 h-4" />
-          <span className="hidden sm:inline">Metas</span>
-        </button>
+        <div className="flex items-center gap-1">
+          {onOpenAiCoach && (
+            <button
+              onClick={onOpenAiCoach}
+              className="p-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-xl transition-all flex items-center gap-1 text-xs font-bold"
+              title="Raio-X Semanal do Treinador IA"
+            >
+              <Sparkles className="w-4 h-4 fill-current" />
+              <span className="hidden sm:inline">Coach IA</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2 text-slate-400 hover:text-mint-400 hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold"
+            title="Configurações de IA & Metas"
+          >
+            <Settings2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Metas</span>
+          </button>
+        </div>
       </div>
 
       {/* CARD PRINCIPAL: CONTADOR DE CALORIAS */}

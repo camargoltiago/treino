@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, ArrowUp, ArrowDown, Save, Dumbbell, AlertTriangle } from 'lucide-react';
+import { X, Plus, Trash2, ArrowUp, ArrowDown, Save, Dumbbell, AlertTriangle, Sparkles } from 'lucide-react';
 import { WorkoutPlan, ExerciseDefinition, MuscleGroup } from '../types';
 import { feedback } from '../services/feedback';
 
@@ -8,6 +8,7 @@ interface WorkoutEditorModalProps {
   onSave: (updatedWorkout: WorkoutPlan) => void;
   onDeleteWorkout: (id: string) => void;
   onClose: () => void;
+  onOpenAiCoach?: (workoutId: string) => void;
 }
 
 const MUSCLE_OPTIONS: { value: MuscleGroup; label: string }[] = [
@@ -25,7 +26,8 @@ export const WorkoutEditorModal: React.FC<WorkoutEditorModalProps> = ({
   workout,
   onSave,
   onDeleteWorkout,
-  onClose
+  onClose,
+  onOpenAiCoach
 }) => {
   if (!workout) return null;
 
@@ -142,12 +144,28 @@ export const WorkoutEditorModal: React.FC<WorkoutEditorModalProps> = ({
             <span className="text-[10px] font-bold uppercase tracking-wider text-mint-400">Personalizar Treino</span>
             <h3 className="text-base font-extrabold text-white">Editar {workout.shortTitle}</h3>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-dark-card transition active:scale-95"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenAiCoach && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenAiCoach(workout.id);
+                }}
+                className="h-8 px-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-400 font-bold text-xs flex items-center gap-1.5 transition active:scale-95"
+                title="Ajustar este treino com Treinador IA"
+              >
+                <Sparkles className="w-3.5 h-3.5 fill-current" />
+                <span>Ajustar com IA</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-dark-card transition active:scale-95"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Formulário com Scroll */}

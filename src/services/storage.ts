@@ -1,4 +1,4 @@
-import { WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings, DeepSeekSettings } from '../types';
+import { WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings, DeepSeekSettings, WeeklyAssessment } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 
 export const STORAGE_KEY = 'meu_treino_hibrido_v2';
@@ -8,6 +8,7 @@ export const NUTRITION_GOALS_KEY = 'meu_treino_nutrition_goals_v2';
 export const AI_SETTINGS_KEY = 'meu_treino_ai_nutrition_settings_v3';
 export const DEEPSEEK_SETTINGS_KEY = 'meu_treino_deepseek_settings';
 export const WATER_STORAGE_KEY = 'meu_treino_water_v2';
+export const COACH_ASSESSMENT_KEY = 'meu_treino_coach_assessment_v1';
 
 export const DEFAULT_NUTRITION_GOALS: NutritionGoals = {
   calories: 2200,
@@ -209,6 +210,30 @@ export const StorageService = {
       localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(settings));
     } catch (err) {
       console.error('Erro ao salvar configurações de IA:', err);
+    }
+  },
+
+  loadCoachAssessment(): WeeklyAssessment | null {
+    try {
+      const raw = localStorage.getItem(COACH_ASSESSMENT_KEY);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch (err) {
+      console.error('Erro ao ler avaliação do Treinador IA:', err);
+    }
+    return null;
+  },
+
+  saveCoachAssessment(assessment: WeeklyAssessment | null) {
+    try {
+      if (assessment) {
+        localStorage.setItem(COACH_ASSESSMENT_KEY, JSON.stringify(assessment));
+      } else {
+        localStorage.removeItem(COACH_ASSESSMENT_KEY);
+      }
+    } catch (err) {
+      console.error('Erro ao salvar avaliação do Treinador IA:', err);
     }
   },
 

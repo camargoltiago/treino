@@ -98,4 +98,5 @@ export interface MuscleRecoveryStatus {
 }
 
 export * from './nutrition';
+export * from './coach';
 

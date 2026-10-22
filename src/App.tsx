@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { WorkoutId, WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings } from './types';
+import { WorkoutId, WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings, WeeklyAssessment } from './types';
 import { WORKOUTS_DATA } from './data/workouts';
 import { StorageService } from './services/storage';
 import { notifyTimerFinished, playWarningBeep } from './services/audio';
@@ -11,6 +11,7 @@ import { RestTimer } from './components/RestTimer';
 import { ExerciseGuideModal } from './components/ExerciseGuideModal';
 import { FinishWorkoutModal } from './components/FinishWorkoutModal';
 import { FeedbackOverlay } from './components/FeedbackOverlay';
+import { AiCoachModal } from './components/AiCoachModal';
 import { feedback } from './services/feedback';
 
 import { TodayView } from './views/TodayView';
@@ -38,6 +39,31 @@ export const App: React.FC = () => {
   const [goals, setGoals] = useState<NutritionGoals>(initialNutrition.goals);
   const [waterLogs, setWaterLogs] = useState<Record<string, number>>(initialNutrition.waterLogs);
   const [aiSettings, setAiSettings] = useState<AiNutritionSettings>(initialNutrition.deepseek);
+
+  // Estados do Treinador IA
+  const [coachAssessment, setCoachAssessment] = useState<WeeklyAssessment | null>(StorageService.loadCoachAssessment());
+  const [isAiCoachOpen, setIsAiCoachOpen] = useState<boolean>(false);
+  const [aiCoachTab, setAiCoachTab] = useState<'assessment' | 'workout_creator'>('assessment');
+  const [aiCoachTargetWorkoutId, setAiCoachTargetWorkoutId] = useState<string | null>(null);
+
+  const handleOpenAiCoach = (tab: 'assessment' | 'workout_creator' = 'assessment', workoutId?: string) => {
+    setAiCoachTab(tab);
+    setAiCoachTargetWorkoutId(workoutId || null);
+    setIsAiCoachOpen(true);
+  };
+
+  const handleSaveAssessment = (newAssessment: WeeklyAssessment | null) => {
+    setCoachAssessment(newAssessment);
+    StorageService.saveCoachAssessment(newAssessment);
+  };
+
+  const handleApplyWorkoutFromAi = (workout: WorkoutPlan, isNew: boolean) => {
+    if (isNew) {
+      handleAddWorkout(workout);
+    } else {
+      handleSaveWorkout(workout);
+    }
+  };
 
   // Manipuladores de Nutrição
   const handleSaveMeal = (newMeal: MealLog) => {
@@ -612,6 +638,8 @@ export const App: React.FC = () => {
             onAddWaterToday={(delta) => handleUpdateWater(todayDateStr, Math.max(0, todayWater + delta))}
             onStartWorkout={handleStartWorkout}
             onNavigateTab={(tab) => setCurrentTab(tab)}
+            onOpenAiCoach={handleOpenAiCoach}
+            coachAssessment={coachAssessment}
           />
         )}
 
@@ -625,6 +653,7 @@ export const App: React.FC = () => {
             onDeleteMeal={handleDeleteMeal}
             onUpdateWater={handleUpdateWater}
             onSaveSettings={handleSaveNutritionSettings}
+            onOpenAiCoach={() => handleOpenAiCoach('assessment')}
           />
         )}
 
@@ -655,6 +684,7 @@ export const App: React.FC = () => {
               onSaveWorkout={handleSaveWorkout}
               onDeleteWorkout={handleDeleteWorkout}
               onAddWorkout={handleAddWorkout}
+              onOpenAiCoach={handleOpenAiCoach}
             />
           )
         )}
@@ -723,6 +753,31 @@ export const App: React.FC = () => {
         session={showFinishModal ? activeSession : null}
         onConfirm={handleConfirmFinishWorkout}
         onCancel={() => setShowFinishModal(false)}
+      />
+
+      {/* Modal do Treinador IA (Raio-X Semanal + Montar/Ajustar Treinos) */}
+      <AiCoachModal
+        isOpen={isAiCoachOpen}
+        onClose={() => {
+          setIsAiCoachOpen(false);
+          setAiCoachTargetWorkoutId(null);
+        }}
+        initialTab={aiCoachTab}
+        targetWorkoutId={aiCoachTargetWorkoutId}
+        history={history}
+        workouts={workouts}
+        meals={meals}
+        waterLogs={waterLogs}
+        goals={goals}
+        recovery={recoveryData.muscles}
+        aiSettings={aiSettings}
+        onSaveAiSettings={(newAi) => {
+          setAiSettings(newAi);
+          StorageService.saveAiSettings(newAi);
+        }}
+        onApplyWorkout={handleApplyWorkoutFromAi}
+        savedAssessment={coachAssessment}
+        onSaveAssessment={handleSaveAssessment}
       />
 
       {/* Overlay Global de Toasts e Confirmações Estilizadas */}
