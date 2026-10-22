@@ -99,8 +99,10 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
     setSpeechSupported(SpeechService.isSupported());
   }, []);
 
-  // Sincronizar dados quando editingMeal mudar ou ao definir tipo inicial
+  // Sincronizar dados quando o modal abre ou quando editingMeal mudar
   useEffect(() => {
+    if (!isOpen) return;
+
     if (editingMeal) {
       setInputMode('manual');
       setMealType(editingMeal.mealType);
@@ -119,10 +121,24 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
       setQuickFat(
         (!editingMeal.items || editingMeal.items.length === 0) ? String(editingMeal.totalFat || '') : ''
       );
-    } else if (!mealName) {
-      setMealName(MEAL_TYPE_LABELS[mealType]);
+      setImagePreview(null);
+      setImageBase64(null);
+      setTextDescription('');
+    } else {
+      setInputMode('ai');
+      setMealType(initialMealType);
+      setMealName(MEAL_TYPE_LABELS[initialMealType]);
+      setItems([]);
+      setNotes('');
+      setQuickCalories('');
+      setQuickProtein('');
+      setQuickCarbs('');
+      setQuickFat('');
+      setImagePreview(null);
+      setImageBase64(null);
+      setTextDescription('');
     }
-  }, [editingMeal, mealType]);
+  }, [editingMeal?.id, isOpen, initialMealType]);
 
   // Alimentos mais frequentes do usuário para atalhos com 1 clique
   const frequentFoods = FoodLibraryService.getTopFrequentFoods(pastMeals, 8);
