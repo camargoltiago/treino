@@ -94,6 +94,7 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
   // Áudio / Reconhecimento de Voz
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = React.useRef<any>(null);
+  const speechBaseTextRef = React.useRef<string>('');
 
   useEffect(() => {
     if (targetWorkoutId) {
@@ -171,16 +172,17 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
       return;
     }
 
+    // Salva o texto que já estava no input antes de iniciar a fala
+    speechBaseTextRef.current = workoutPrompt.trim();
+
     const rec = SpeechService.createRecognitionInstance({
       onStart: () => {
         setIsListening(true);
         feedback.info('Pode falar... O Treinador IA está ouvindo!');
       },
-      onResult: (transcript, isFinal) => {
-        setWorkoutPrompt(prev => {
-          const base = prev.trim() ? `${prev.trim()} ` : '';
-          return `${base}${transcript}`;
-        });
+      onResult: (transcript) => {
+        const base = speechBaseTextRef.current;
+        setWorkoutPrompt(base ? `${base} ${transcript}` : transcript);
       },
       onError: (err) => {
         feedback.error(err);

@@ -68,6 +68,7 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
   const recognitionRef = useRef<any>(null);
+  const speechBaseTextRef = useRef<string>('');
 
   // Estados de Autocomplete
   const [activeAutocompleteIdx, setActiveAutocompleteIdx] = useState<number | null>(null);
@@ -144,16 +145,17 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
       return;
     }
 
+    // Salva o texto que já estava no input antes de iniciar a fala
+    speechBaseTextRef.current = textDescription.trim();
+
     const recognition = SpeechService.createRecognitionInstance({
       onStart: () => {
         setIsRecording(true);
         feedback.info('Ouvindo... Fale os alimentos que consumiu.');
       },
       onResult: (transcript) => {
-        setTextDescription((prev) => {
-          const trimmed = prev.trim();
-          return trimmed ? `${trimmed} ${transcript}` : transcript;
-        });
+        const base = speechBaseTextRef.current;
+        setTextDescription(base ? `${base} ${transcript}` : transcript);
       },
       onError: (errMsg) => {
         setIsRecording(false);

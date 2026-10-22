@@ -43,20 +43,24 @@ export const SpeechService = {
       };
 
       recognition.onresult = (event: any) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
+        let sessionFinal = '';
+        let sessionInterim = '';
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+        for (let i = 0; i < event.results.length; ++i) {
           const item = event.results[i];
-          if (item.isFinal) {
-            finalTranscript += item[0].transcript;
-          } else {
-            interimTranscript += item[0].transcript;
+          if (item && item[0]) {
+            if (item.isFinal) {
+              sessionFinal += item[0].transcript + ' ';
+            } else {
+              sessionInterim += item[0].transcript + ' ';
+            }
           }
         }
 
-        const transcript = finalTranscript || interimTranscript;
-        handlers.onResult(transcript.trim(), !!finalTranscript);
+        const transcript = (sessionFinal + sessionInterim).trim().replace(/\s+/g, ' ');
+        if (transcript) {
+          handlers.onResult(transcript, sessionInterim.trim().length === 0);
+        }
       };
 
       recognition.onerror = (event: any) => {
