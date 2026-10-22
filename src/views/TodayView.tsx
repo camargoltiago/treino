@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, ArrowRight, Activity, Flame, Calendar, Dumbbell, Droplets, Sparkles, TrendingUp } from 'lucide-react';
+import { Play, ArrowRight, Activity, Flame, Calendar, Dumbbell, Droplets, Sparkles, TrendingUp, Key } from 'lucide-react';
 import { WorkoutSession, WorkoutId, MuscleRecoveryStatus, MuscleGroup, WorkoutPlan, WeeklyAssessment } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 import { TabType } from '../components/Navbar';
@@ -24,6 +24,7 @@ interface TodayViewProps {
   onStartWorkout: (id: WorkoutId) => void;
   onNavigateTab: (tab: TabType) => void;
   onOpenAiCoach?: (initialTab?: 'assessment' | 'workout_creator') => void;
+  onOpenAiSettings?: () => void;
   coachAssessment?: WeeklyAssessment | null;
 }
 
@@ -39,6 +40,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
   onStartWorkout,
   onNavigateTab,
   onOpenAiCoach,
+  onOpenAiSettings,
   coachAssessment
 }) => {
   const now = new Date();
@@ -180,6 +182,17 @@ export const TodayView: React.FC<TodayViewProps> = ({
               <h3 className="text-base font-extrabold text-white">Treinador IA</h3>
             </div>
           </div>
+
+          {onOpenAiSettings && (
+            <button
+              onClick={onOpenAiSettings}
+              className="text-xs text-slate-400 hover:text-white bg-dark-bg/60 hover:bg-dark-border border border-dark-border px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition active:scale-95 shrink-0"
+              title="Configurações de IA (Chave da API & Modelo)"
+            >
+              <Key className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-[11px] font-medium hidden sm:inline">Configurar IA</span>
+            </button>
+          )}
         </div>
 
         <p className="text-xs text-slate-300 leading-relaxed">

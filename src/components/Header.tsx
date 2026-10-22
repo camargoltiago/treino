@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, VolumeX, Download, Play, Sun, Moon } from 'lucide-react';
+import { Volume2, VolumeX, Download, Play, Sun, Moon, Key } from 'lucide-react';
 import { WorkoutSession } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 
@@ -12,6 +12,7 @@ interface HeaderProps {
   onOpenActiveSession: () => void;
   canInstallPwa: boolean;
   onInstallPwa: () => void;
+  onOpenAiSettings?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,7 +23,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   onOpenActiveSession,
   canInstallPwa,
-  onInstallPwa
+  onInstallPwa,
+  onOpenAiSettings
 }) => {
   const plan = activeSession ? WORKOUTS_DATA[activeSession.workoutId] : null;
 
@@ -54,6 +56,17 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Download className="w-3.5 h-3.5" />
               <span className="text-[11px]">Instalar</span>
+            </button>
+          )}
+
+          {/* Configurações de IA: Chave e Modelo */}
+          {onOpenAiSettings && (
+            <button
+              onClick={onOpenAiSettings}
+              className="w-8 h-8 rounded-xl bg-dark-card border border-dark-border text-slate-300 hover:text-white flex items-center justify-center transition active:scale-90"
+              title="Configurar IA (Chave da API & Modelo)"
+            >
+              <Key className="w-4 h-4 text-amber-400" />
             </button>
           )}
 

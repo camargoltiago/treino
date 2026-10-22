@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Key, ShieldCheck, Target, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, Sparkles, ExternalLink } from 'lucide-react';
+import { X, Key, ShieldCheck, Target, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, Sparkles, ExternalLink, Trash2 } from 'lucide-react';
 import { AiNutritionSettings, NutritionGoals } from '../types';
 import { GeminiNutritionService } from '../services/gemini';
 import { feedback } from '../services/feedback';
@@ -54,6 +54,21 @@ export const NutritionSettingsModal: React.FC<NutritionSettingsModalProps> = ({
       setTestErrorMessage(err.message || 'Erro ao comunicar com a API do Gemini.');
       feedback.error('Falha ao autenticar chave da IA.');
     }
+  };
+
+  const handleClearKey = () => {
+    setApiKey('');
+    setTestingStatus('idle');
+    onSave(
+      {
+        ...settings,
+        apiKey: '',
+        model: model.trim() || 'gemini-3.8-flash',
+        provider: 'gemini'
+      },
+      goals
+    );
+    feedback.success('Chave da API apagada com sucesso!');
   };
 
   const handleSave = () => {
@@ -152,6 +167,20 @@ export const NutritionSettingsModal: React.FC<NutritionSettingsModalProps> = ({
               </div>
             </div>
 
+            {/* Ações da Chave: Apagar / Limpar Chave */}
+            {apiKey.trim() && (
+              <div className="flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={handleClearKey}
+                  className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20 flex items-center gap-1.5 transition active:scale-95"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Apagar Chave da API</span>
+                </button>
+              </div>
+            )}
+
             {testingStatus === 'error' && (
               <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl">
                 {testErrorMessage}
@@ -168,30 +197,19 @@ export const NutritionSettingsModal: React.FC<NutritionSettingsModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-semibold text-slate-400">
-                  Modelo selecionado
+                  Modelo selecionado (Google Gemini)
                 </label>
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setModel('gemini-3.8-flash')}
-                    className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                    className={`text-[10px] px-2.5 py-1 rounded-lg border transition-all ${
                       model === 'gemini-3.8-flash'
                         ? 'border-mint-500 text-mint-400 bg-mint-500/10 font-bold'
                         : 'border-dark-border text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    3.8 Flash
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setModel('gemini-2.5-flash')}
-                    className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
-                      model === 'gemini-2.5-flash'
-                        ? 'border-mint-500 text-mint-400 bg-mint-500/10 font-bold'
-                        : 'border-dark-border text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    2.5 Flash
+                    3.8 Flash (Padrão)
                   </button>
                 </div>
               </div>

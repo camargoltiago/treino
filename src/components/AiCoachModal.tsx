@@ -15,7 +15,8 @@ import {
   Key,
   Layers,
   Calendar,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import {
   WorkoutPlan,
@@ -74,6 +75,7 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
 
   // Chave da IA
   const [apiKeyInput, setApiKeyInput] = useState(aiSettings.apiKey || '');
+  const [modelInput, setModelInput] = useState(aiSettings.model || 'gemini-3.8-flash');
   const [showKeyForm, setShowKeyForm] = useState(!aiSettings.apiKey);
 
   // Estado da Avaliação Semanal
@@ -109,7 +111,7 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
     setAssessment(savedAssessment);
   }, [savedAssessment]);
 
-  // Salvar Chave do Gemini
+  // Salvar Chave e Modelo do Gemini
   const handleSaveApiKey = () => {
     if (!apiKeyInput.trim()) {
       feedback.warning('Informe a chave de API do Gemini.');
@@ -118,11 +120,24 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
     const updated = {
       ...aiSettings,
       apiKey: apiKeyInput.trim(),
+      model: modelInput.trim() || 'gemini-3.8-flash',
       provider: 'gemini' as const
     };
     onSaveAiSettings(updated);
     setShowKeyForm(false);
-    feedback.success('Chave da IA salva com sucesso!');
+    feedback.success('Configurações da IA salvas com sucesso!');
+  };
+
+  // Apagar Chave do Gemini
+  const handleClearApiKey = () => {
+    const updated = {
+      ...aiSettings,
+      apiKey: '',
+      provider: 'gemini' as const
+    };
+    setApiKeyInput('');
+    onSaveAiSettings(updated);
+    feedback.success('Chave de API apagada!');
   };
 
   // 1. Gerar Avaliação Semanal
@@ -144,7 +159,7 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
         goals,
         recovery,
         apiKey: key,
-        model: aiSettings.model || 'gemini-2.5-flash'
+        model: aiSettings.model || 'gemini-3.8-flash'
       });
 
       setAssessment(result);
@@ -228,7 +243,7 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
         currentWorkout: targetW,
         existingWorkouts: workouts,
         apiKey: key,
-        model: aiSettings.model || 'gemini-2.5-flash'
+        model: aiSettings.model || 'gemini-3.8-flash'
       });
 
       setGeneratedResult(result);
@@ -327,12 +342,26 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setShowKeyForm(!showKeyForm)}
+              className={`p-2 rounded-xl border transition ${
+                showKeyForm
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'
+              }`}
+              title="Configurar Chave da API e Modelo IA"
+            >
+              <Key className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Abas Principais */}
@@ -362,37 +391,79 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
           </button>
         </div>
 
-        {/* Banner de Configuração de Chave Gemini se não houver ou se expandido */}
+        {/* Banner de Configuração de Chave Gemini e Modelo */}
         {showKeyForm && (
-          <div className="p-4 bg-amber-500/10 border-b border-amber-500/20 text-xs text-amber-200 shrink-0 space-y-2">
+          <div className="p-4 bg-amber-500/10 border-b border-amber-500/20 text-xs text-amber-200 shrink-0 space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-bold flex items-center gap-1.5 text-amber-300">
                 <Key className="w-4 h-4" />
-                Chave da API Google Gemini
+                Configurar IA (Google Gemini)
               </span>
-              {aiSettings.apiKey && (
-                <button
-                  onClick={() => setShowKeyForm(false)}
-                  className="text-slate-400 hover:text-white text-[11px]"
-                >
-                  Ocultar
-                </button>
-              )}
+              <button
+                onClick={() => setShowKeyForm(false)}
+                className="text-slate-400 hover:text-white text-[11px]"
+              >
+                Ocultar
+              </button>
             </div>
-            <p className="text-[11px] text-amber-300/80">
-              O Treinador IA usa o Google Gemini Flash gratuito. Cole sua chave para ativar a análise inteligente.
-            </p>
-            <div className="flex items-center gap-2 pt-1">
+
+            <div>
+              <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                Chave da API (Google AI Studio)
+              </label>
               <input
                 type="password"
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
                 placeholder="Cole sua API Key do Google AI Studio (AIza...)"
-                className="flex-1 bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-mint-500"
+                className="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-mint-500"
               />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-semibold text-slate-300">
+                  Modelo selecionado
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setModelInput('gemini-3.8-flash')}
+                  className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                    modelInput === 'gemini-3.8-flash'
+                      ? 'border-mint-500 text-mint-400 bg-mint-500/10 font-bold'
+                      : 'border-dark-border text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  3.8 Flash (Recomendado)
+                </button>
+              </div>
+              <input
+                type="text"
+                value={modelInput}
+                onChange={(e) => setModelInput(e.target.value)}
+                placeholder="gemini-3.8-flash"
+                className="w-full bg-dark-bg/60 border border-dark-border rounded-xl px-3 py-1.5 text-xs font-mono text-slate-300 focus:outline-none focus:border-mint-500/50"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              {apiKeyInput.trim() ? (
+                <button
+                  type="button"
+                  onClick={handleClearApiKey}
+                  className="px-2.5 py-1.5 text-[11px] text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg border border-rose-500/20 flex items-center gap-1 transition active:scale-95"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Apagar Chave</span>
+                </button>
+              ) : (
+                <span className="text-[10px] text-slate-400">Nenhuma chave configurada</span>
+              )}
+
               <button
+                type="button"
                 onClick={handleSaveApiKey}
-                className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs transition active:scale-95"
+                className="px-4 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs transition active:scale-95 shadow-sm"
               >
                 Salvar
               </button>

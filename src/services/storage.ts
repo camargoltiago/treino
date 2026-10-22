@@ -20,7 +20,7 @@ export const DEFAULT_NUTRITION_GOALS: NutritionGoals = {
 
 export const DEFAULT_AI_SETTINGS: AiNutritionSettings = {
   apiKey: '',
-  model: 'gemini-2.5-flash',
+  model: 'gemini-3.8-flash',
   provider: 'gemini'
 };
 
@@ -172,6 +172,9 @@ export const StorageService = {
         const parsed = JSON.parse(rawAi);
         if (parsed && typeof parsed === 'object') {
           deepseek = { ...DEFAULT_AI_SETTINGS, ...parsed };
+          if (!deepseek.model || deepseek.model === 'gemini-2.5-flash') {
+            deepseek.model = 'gemini-3.8-flash';
+          }
         }
       }
     } catch (err) {

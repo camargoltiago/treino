@@ -12,6 +12,7 @@ import { ExerciseGuideModal } from './components/ExerciseGuideModal';
 import { FinishWorkoutModal } from './components/FinishWorkoutModal';
 import { FeedbackOverlay } from './components/FeedbackOverlay';
 import { AiCoachModal } from './components/AiCoachModal';
+import { NutritionSettingsModal } from './components/NutritionSettingsModal';
 import { feedback } from './services/feedback';
 
 import { TodayView } from './views/TodayView';
@@ -39,6 +40,7 @@ export const App: React.FC = () => {
   const [goals, setGoals] = useState<NutritionGoals>(initialNutrition.goals);
   const [waterLogs, setWaterLogs] = useState<Record<string, number>>(initialNutrition.waterLogs);
   const [aiSettings, setAiSettings] = useState<AiNutritionSettings>(initialNutrition.deepseek);
+  const [isNutritionSettingsOpen, setIsNutritionSettingsOpen] = useState<boolean>(false);
 
   // Estados do Treinador IA
   const [coachAssessment, setCoachAssessment] = useState<WeeklyAssessment | null>(StorageService.loadCoachAssessment());
@@ -650,6 +652,7 @@ export const App: React.FC = () => {
         onOpenActiveSession={() => setCurrentTab('workouts')}
         canInstallPwa={!!deferredPrompt}
         onInstallPwa={handleInstallPwa}
+        onOpenAiSettings={() => setIsNutritionSettingsOpen(true)}
       />
 
       {/* Main Container com espaçamento seguro para menus inferiores */}
@@ -667,6 +670,7 @@ export const App: React.FC = () => {
             onStartWorkout={handleStartWorkout}
             onNavigateTab={(tab) => setCurrentTab(tab)}
             onOpenAiCoach={handleOpenAiCoach}
+            onOpenAiSettings={() => setIsNutritionSettingsOpen(true)}
             coachAssessment={coachAssessment}
           />
         )}
@@ -806,6 +810,15 @@ export const App: React.FC = () => {
         onApplyWorkouts={handleApplyWorkoutsFromAi}
         savedAssessment={coachAssessment}
         onSaveAssessment={handleSaveAssessment}
+      />
+
+      {/* Modal Global de Configurações de IA (Chave da API & Modelo) e Metas */}
+      <NutritionSettingsModal
+        isOpen={isNutritionSettingsOpen}
+        onClose={() => setIsNutritionSettingsOpen(false)}
+        settings={aiSettings}
+        goals={goals}
+        onSave={handleSaveNutritionSettings}
       />
 
       {/* Overlay Global de Toasts e Confirmações Estilizadas */}

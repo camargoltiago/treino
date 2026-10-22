@@ -11,7 +11,7 @@ import {
   AiWorkoutPlanItem
 } from '../types';
 
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
 
 /**
  * Extrai e sanitiza JSON retornado pelo Gemini
