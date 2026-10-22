@@ -7,7 +7,8 @@ import {
   MuscleGroup,
   WeeklyAssessment,
   WeeklyAssessmentStats,
-  AiWorkoutGenerationResult
+  AiWorkoutGenerationResult,
+  AiWorkoutPlanItem
 } from '../types';
 
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
@@ -308,17 +309,26 @@ Retorne ESTRITAMENTE um objeto JSON com esta estrutura exata:
   },
 
   /**
-   * Montar ou Editar Treino com IA
+   * Montar ou Editar Treino com IA (pode criar/ajustar 1 treino específico OU toda a rotina de treinos)
    */
   async generateOrEditWorkout(params: {
     prompt: string;
     mode: 'new' | 'edit';
+    editScope?: 'all' | 'single';
     currentWorkout?: WorkoutPlan | null;
     existingWorkouts?: Record<string, WorkoutPlan>;
     apiKey: string;
     model?: string;
   }): Promise<AiWorkoutGenerationResult> {
-    const { prompt, mode, currentWorkout, existingWorkouts = {}, apiKey, model = DEFAULT_GEMINI_MODEL } = params;
+    const {
+      prompt,
+      mode,
+      editScope = 'all',
+      currentWorkout,
+      existingWorkouts = {},
+      apiKey,
+      model = DEFAULT_GEMINI_MODEL
+    } = params;
 
     if (!apiKey || apiKey.trim() === '') {
       throw new Error('API Key do Gemini não configurada. Configure sua chave nas configurações.');
@@ -330,8 +340,9 @@ Retorne ESTRITAMENTE um objeto JSON com esta estrutura exata:
 
     const muscleGroupsAllowed = ['chest', 'back', 'shoulders', 'arms', 'quads', 'hamstrings', 'calves', 'abs'];
 
-    let systemInstructions = `Você é um treinador mestre de musculação e hipertrofia esportiva no app MuscleTrack.
-Sua função é gerar fichas de treino otimizadas, biomecanicamente seguras e com volume ideal de séries (geralmente entre 14 a 22 séries totais por treino para hipertrofia, 4 a 7 exercícios).
+    const systemInstructions = `Você é o Treinador Mestre de musculação e periodização de hipertrofia do app MuscleTrack.
+Sua missão é criar ou ajustar fichas de treino eficientes, balanceadas e seguras.
+Cada treino deve ter entre 4 a 7 exercícios bem selecionados, com volume adequado (geralmente 14 a 22 séries totais por treino para hipertrofia).
 
 GRUPOS MUSCULARES VÁLIDOS (muscleGroup DEVE ser estritamente um destes):
 - "chest" (Peitoral)
@@ -344,26 +355,57 @@ GRUPOS MUSCULARES VÁLIDOS (muscleGroup DEVE ser estritamente um destes):
 - "abs" (Abdômen / Core)`;
 
     let contextData = '';
-    if (mode === 'edit' && currentWorkout) {
-      contextData = `
-O usuário quer EDITAR um treino existente:
-- Treino Atual: "${currentWorkout.title}" (Código: ${currentWorkout.code}, Foco: ${currentWorkout.focus})
+
+    if (mode === 'edit') {
+      if (editScope === 'all' || !currentWorkout) {
+        // Ajustar TODOS os treinos da rotina
+        const existingList = Object.values(existingWorkouts);
+        contextData = `
+O usuário quer AJUSTAR TODOS OS DIAS DA ROTINA ATUAL (${existingList.length} treinos no total):
+${existingList.map(w => `
+TREINO ATUAL [ID: "${w.id}", Código: "${w.code}"]: "${w.title}" (Foco: ${w.focus})
+Exercícios atuais:
+${w.exercises.map(e => `  * ${e.name} (${e.sets} séries x ${e.reps} reps, descanso: ${e.restSeconds}s, grupo: ${e.muscleGroup})`).join('\n')}
+`).join('\n')}
+
+PEDIDO DE AJUSTE DO USUÁRIO PARA TODOS OS TREINOS:
+"${prompt.trim()}"
+
+INSTRUÇÕES CRÍTICAS PARA AJUSTAR TODOS OS TREINOS:
+1. Aplique o pedido em CADA UM dos treinos da rotina (ex: se pediu para trocar um exercício, diminuir tempo para 40 min, incluir bi-sets, mudar repetições, mudar foco, etc., faça o ajuste em todos os treinos aplicáveis).
+2. Mantenha os mesmos IDs nos treinos retornados ("id": "${existingList[0]?.id || ''}") e os mesmos códigos ("A", "B", "C"...) para que o aplicativo atualize as fichas existentes sem perder o histórico do usuário!
+3. Retorne TODOS os treinos da rotina atualizados no array "workouts".`;
+      } else {
+        // Ajustar 1 treino específico
+        contextData = `
+O usuário quer EDITAR APENAS 1 TREINO ESPECÍFICO:
+- Treino a ser editado [ID: "${currentWorkout.id}", Código: "${currentWorkout.code}"]: "${currentWorkout.title}" (Foco: ${currentWorkout.focus})
 - Exercícios atuais:
 ${currentWorkout.exercises.map(e => `  * ${e.name} (${e.sets} séries x ${e.reps} reps, descanso: ${e.restSeconds}s, grupo: ${e.muscleGroup})`).join('\n')}
 
-PEDIDO DO USUÁRIO DE MODIFICAÇÃO:
+PEDIDO DE MODIFICAÇÃO:
 "${prompt.trim()}"
 
-INSTRUÇÕES PARA EDIÇÃO:
-Aplique os ajustes pedidos (ex: trocar exercícios que incomodam articulações, diminuir ou aumentar volume, mudar foco, transformar em bi-set, etc.) mantendo a consistência do treino.`;
+INSTRUÇÕES:
+Aplique os ajustes no treino indicado mantendo o ID ("id": "${currentWorkout.id}") e o código ("${currentWorkout.code}").
+Retorne o treino ajustado no array "workouts" (com 1 elemento).`;
+      }
     } else {
+      // Criar Novo Treino ou Nova Rotina Completa
+      const existingTitles = Object.values(existingWorkouts).map(w => w.title).join(', ') || 'Nenhum';
       contextData = `
-O usuário quer CRIAR UM NOVO TREINO a partir da seguinte instrução:
+O usuário quer que você CRIE UMA NOVA FICHA OU ROTINA DE TREINO a partir do seguinte pedido:
 "${prompt.trim()}"
 
-Treinos já existentes na rotina dele: ${Object.values(existingWorkouts).map(w => w.title).join(', ') || 'Nenhum'}.
+Treinos que o usuário já tinha no app: ${existingTitles}.
 
-Crie uma ficha de treino completa, equilibrada, com aquecimento/composto no início e isoladores ao final.`;
+INSTRUÇÕES CRÍTICAS PARA CRIAÇÃO:
+1. Se o usuário pediu uma divisão ou rotina completa (ex: "Treino ABC", "ABCD", "Push/Pull/Legs", "Upper/Lower", "Full Body 3x", "Rotina de hipertrofia", etc.), gere TODOS OS DIAS DA ROTINA no array "workouts"!
+   - Por exemplo, se pediu ABC: gere 3 treinos (Treino A, Treino B e Treino C).
+   - Se pediu ABCD: gere 4 treinos (Treino A, Treino B, Treino C e Treino D).
+   - Se pediu apenas 1 treino pontual (ex: "Treino de braço"): gere 1 treino no array "workouts".
+2. Defina os códigos em sequência: "A", "B", "C", "D"...
+3. Garanta que cada treino tenha exercícios equilibrados, aquecimento/compostos no início e isoladores no final.`;
     }
 
     const fullPrompt = `
@@ -371,28 +413,33 @@ ${systemInstructions}
 
 ${contextData}
 
-Retorne ESTRITAMENTE um objeto JSON no seguinte formato:
+Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
 {
-  "message": "Mensagem curta explicando o que você montou e a estratégia fisiológica adotada.",
-  "workout": {
-    "title": "Nome do Treino (ex: Treino D — Ombros e Braços, ou Treino B — Pernas Completo)",
-    "shortTitle": "Nome curto (ex: Ombros & Braços)",
-    "focus": "Descrição concisa do foco (ex: Foco em deltoide lateral e tríceps com volume moderado)",
-    "dayLabel": "Dia sugerido ou 'Personalizado'",
-    "estimatedMinutes": 50,
-    "exercises": [
-      {
-        "name": "Nome do exercício (ex: Supino Inclinado com Halteres)",
-        "muscleGroup": "chest", // OBRIGATÓRIO: um de ["chest", "back", "shoulders", "arms", "quads", "hamstrings", "calves", "abs"]
-        "sets": 4,
-        "reps": "8–12",
-        "restSeconds": 90,
-        "notes": "Instrução técnica rápida ou cadência",
-        "targetLoadKg": 20,
-        "isDumbbell": true
-      }
-    ]
-  }
+  "message": "Explicação resumida em 1 a 2 frases da estratégia adotada para esta rotina/treino.",
+  "isFullRoutine": true,
+  "workouts": [
+    {
+      "id": "opcional_manter_se_for_edicao",
+      "code": "A",
+      "title": "Treino A — Peito e Tríceps",
+      "shortTitle": "Peito & Tríceps",
+      "focus": "Foco em peitoral maior e deltoide anterior com ênfase em sobrecarga progressiva",
+      "dayLabel": "Segunda-feira",
+      "estimatedMinutes": 50,
+      "exercises": [
+        {
+          "name": "Supino Reto com Barra",
+          "muscleGroup": "chest",
+          "sets": 4,
+          "reps": "8–10",
+          "restSeconds": 120,
+          "notes": "Executar cadência controlada na descida",
+          "targetLoadKg": 25,
+          "isDumbbell": false
+        }
+      ]
+    }
+  ]
 }
 `;
 
@@ -429,41 +476,66 @@ Retorne ESTRITAMENTE um objeto JSON no seguinte formato:
     }
 
     const parsed = extractJsonFromResponse(candidate.content.parts[0].text);
-    const w = parsed.workout || {};
 
-    const exercises = Array.isArray(w.exercises)
-      ? w.exercises.map((ex: any) => {
-          let muscleGroup = (String(ex.muscleGroup || 'chest').toLowerCase()) as any;
-          if (!muscleGroupsAllowed.includes(muscleGroup)) {
-            muscleGroup = 'chest';
-          }
-          return {
-            name: String(ex.name || 'Exercício').trim(),
-            muscleGroup,
-            sets: Math.max(1, Math.min(10, Math.round(Number(ex.sets) || 3))),
-            reps: String(ex.reps || '8–12').trim(),
-            restSeconds: Math.max(0, Math.round(Number(ex.restSeconds) || 90)),
-            notes: String(ex.notes || '').trim(),
-            targetLoadKg: ex.targetLoadKg !== undefined ? Math.round(Number(ex.targetLoadKg)) : undefined,
-            isDumbbell: !!ex.isDumbbell
-          };
-        })
-      : [];
-
-    if (exercises.length === 0) {
-      throw new Error('A IA não gerou nenhum exercício válido. Tente novamente.');
+    // Suportar tanto "workouts" (array) quanto "workout" (único objeto legado)
+    let rawWorkouts: any[] = [];
+    if (Array.isArray(parsed.workouts) && parsed.workouts.length > 0) {
+      rawWorkouts = parsed.workouts;
+    } else if (parsed.workout && typeof parsed.workout === 'object') {
+      rawWorkouts = [parsed.workout];
     }
 
-    return {
-      message: String(parsed.message || 'Treino configurado com sucesso!'),
-      workout: {
-        title: String(w.title || 'Novo Treino IA').trim(),
-        shortTitle: String(w.shortTitle || 'Treino IA').trim(),
+    if (rawWorkouts.length === 0) {
+      throw new Error('A IA não gerou nenhum treino válido. Tente novamente.');
+    }
+
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const normalizedWorkouts: AiWorkoutPlanItem[] = rawWorkouts.map((w: any, wIdx: number) => {
+      const code = String(w.code || letters[wIdx % letters.length] || `T${wIdx + 1}`).trim().toUpperCase();
+      const exercises = Array.isArray(w.exercises)
+        ? w.exercises.map((ex: any) => {
+            let muscleGroup = (String(ex.muscleGroup || 'chest').toLowerCase()) as any;
+            if (!muscleGroupsAllowed.includes(muscleGroup)) {
+              muscleGroup = 'chest';
+            }
+            return {
+              name: String(ex.name || 'Exercício').trim(),
+              muscleGroup,
+              sets: Math.max(1, Math.min(10, Math.round(Number(ex.sets) || 3))),
+              reps: String(ex.reps || '8–12').trim(),
+              restSeconds: Math.max(0, Math.round(Number(ex.restSeconds) || 90)),
+              notes: String(ex.notes || '').trim(),
+              targetLoadKg: ex.targetLoadKg !== undefined ? Math.round(Number(ex.targetLoadKg)) : undefined,
+              isDumbbell: !!ex.isDumbbell
+            };
+          })
+        : [];
+
+      return {
+        id: w.id ? String(w.id) : undefined,
+        code,
+        title: String(w.title || `Treino ${code}`).trim(),
+        shortTitle: String(w.shortTitle || `Treino ${code}`).trim(),
         focus: String(w.focus || 'Hipertrofia e força').trim(),
         dayLabel: String(w.dayLabel || 'Personalizado').trim(),
         estimatedMinutes: Math.max(20, Math.round(Number(w.estimatedMinutes) || 50)),
-        exercises
-      }
+        exercises: exercises.length > 0 ? exercises : [
+          {
+            name: 'Exercício Base',
+            muscleGroup: 'chest',
+            sets: 3,
+            reps: '8–12',
+            restSeconds: 90,
+            notes: 'Execução controlada'
+          }
+        ]
+      };
+    });
+
+    return {
+      message: String(parsed.message || 'Treinos configurados com sucesso pelo Treinador IA!'),
+      isFullRoutine: normalizedWorkouts.length > 1 || !!parsed.isFullRoutine,
+      workouts: normalizedWorkouts
     };
   }
 };

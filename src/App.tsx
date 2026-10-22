@@ -57,11 +57,36 @@ export const App: React.FC = () => {
     StorageService.saveCoachAssessment(newAssessment);
   };
 
-  const handleApplyWorkoutFromAi = (workout: WorkoutPlan, isNew: boolean) => {
-    if (isNew) {
-      handleAddWorkout(workout);
+  const handleApplyWorkoutsFromAi = (
+    plans: WorkoutPlan[],
+    mode: 'replace_all' | 'append' | 'update'
+  ) => {
+    if (mode === 'replace_all') {
+      const newMap: Record<string, WorkoutPlan> = {};
+      plans.forEach(p => {
+        newMap[p.id] = p;
+      });
+      setWorkouts(newMap);
+      feedback.success(`Nova rotina com ${plans.length} treinos aplicada com sucesso!`);
+    } else if (mode === 'update') {
+      setWorkouts(prev => {
+        const copy = { ...prev };
+        plans.forEach(p => {
+          copy[p.id] = p;
+        });
+        return copy;
+      });
+      feedback.success(`${plans.length} treino(s) atualizado(s) com sucesso!`);
     } else {
-      handleSaveWorkout(workout);
+      // append
+      setWorkouts(prev => {
+        const copy = { ...prev };
+        plans.forEach(p => {
+          copy[p.id] = p;
+        });
+        return copy;
+      });
+      feedback.success(`${plans.length} novo(s) treino(s) adicionado(s) à sua lista!`);
     }
   };
 
@@ -775,7 +800,7 @@ export const App: React.FC = () => {
           setAiSettings(newAi);
           StorageService.saveAiSettings(newAi);
         }}
-        onApplyWorkout={handleApplyWorkoutFromAi}
+        onApplyWorkouts={handleApplyWorkoutsFromAi}
         savedAssessment={coachAssessment}
         onSaveAssessment={handleSaveAssessment}
       />

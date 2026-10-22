@@ -44,23 +44,28 @@ export interface WeeklyAssessment {
   nextWeekActionPlan: string[]; // 3 a 4 metas práticas
 }
 
+export interface AiWorkoutPlanItem {
+  id?: string;
+  code: string;
+  title: string;
+  shortTitle: string;
+  focus: string;
+  dayLabel: string;
+  estimatedMinutes: number;
+  exercises: {
+    name: string;
+    muscleGroup: 'chest' | 'back' | 'shoulders' | 'arms' | 'quads' | 'hamstrings' | 'calves' | 'abs';
+    sets: number;
+    reps: string;
+    restSeconds: number;
+    notes: string;
+    targetLoadKg?: number;
+    isDumbbell?: boolean;
+  }[];
+}
+
 export interface AiWorkoutGenerationResult {
   message: string;
-  workout: {
-    title: string;
-    shortTitle: string;
-    focus: string;
-    dayLabel: string;
-    estimatedMinutes: number;
-    exercises: {
-      name: string;
-      muscleGroup: 'chest' | 'back' | 'shoulders' | 'arms' | 'quads' | 'hamstrings' | 'calves' | 'abs';
-      sets: number;
-      reps: string;
-      restSeconds: number;
-      notes: string;
-      targetLoadKg?: number;
-      isDumbbell?: boolean;
-    }[];
-  };
+  isFullRoutine: boolean;
+  workouts: AiWorkoutPlanItem[];
 }
