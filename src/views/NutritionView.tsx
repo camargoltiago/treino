@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Flame, Plus, Camera, Sparkles, Settings2, Droplets, ChevronLeft, ChevronRight, 
-  Trash2, Clock, Calendar, Check, AlertCircle, UtensilsCrossed 
+  Trash2, Clock, Calendar, Check, AlertCircle, UtensilsCrossed, ChevronDown 
 } from 'lucide-react';
 import { 
   MealLog, NutritionGoals, AiNutritionSettings, MealType, 
@@ -45,6 +45,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [defaultMealType, setDefaultMealType] = useState<MealType>('almoco');
+  const [expandedItemKey, setExpandedItemKey] = useState<string | null>(null);
 
   const todayStr = getTodayDateStr();
   const isToday = selectedDate === todayStr;
@@ -431,23 +432,65 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Alimentos listados */}
+                  {/* Alimentos listados com expansão de macros por item */}
                   {meal.items && meal.items.length > 0 && (
-                    <div className="pt-2 border-t border-dark-border/60 space-y-1">
-                      {meal.items.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between text-xs text-slate-300 py-0.5"
-                        >
-                          <span className="truncate pr-2">
-                            • {item.name}{' '}
-                            <span className="text-[10px] text-slate-500 font-mono">({item.portion})</span>
-                          </span>
-                          <span className="text-[11px] font-bold text-slate-400 font-mono shrink-0">
-                            {item.calories} kcal
-                          </span>
-                        </div>
-                      ))}
+                    <div className="pt-2 border-t border-dark-border/60 space-y-1.5">
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-wider px-1">
+                        <span>Alimentos da refeição</span>
+                        <span>Toque p/ ver macros</span>
+                      </div>
+                      {meal.items.map((item, idx) => {
+                        const itemKey = `${meal.id}_${idx}`;
+                        const isExpanded = expandedItemKey === itemKey;
+
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => setExpandedItemKey(isExpanded ? null : itemKey)}
+                            className="rounded-xl p-2 bg-dark-bg/40 hover:bg-dark-bg/70 border border-transparent hover:border-dark-border cursor-pointer transition-all space-y-2 select-none group"
+                          >
+                            <div className="flex items-center justify-between text-xs text-slate-200">
+                              <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                                <span className={`w-1.5 h-1.5 rounded-full transition-colors shrink-0 ${isExpanded ? 'bg-mint-400' : 'bg-slate-500 group-hover:bg-mint-400/60'}`} />
+                                <span className="font-semibold truncate">
+                                  {item.name}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                                  ({item.portion})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-xs font-bold text-mint-400 font-mono">
+                                  {item.calories} kcal
+                                </span>
+                                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-mint-400' : 'group-hover:text-slate-200'}`} />
+                              </div>
+                            </div>
+
+                            {/* Detalhes de macros do item individual */}
+                            {isExpanded && (
+                              <div className="pt-2 border-t border-dark-border/40 grid grid-cols-4 gap-1.5 text-center animate-fadeIn">
+                                <div className="bg-dark-card/80 p-1.5 rounded-lg border border-dark-border/50">
+                                  <span className="text-[9px] text-slate-400 block">Calorias</span>
+                                  <span className="text-xs font-black text-mint-400 font-mono">{item.calories} <span className="text-[9px]">kcal</span></span>
+                                </div>
+                                <div className="bg-dark-card/80 p-1.5 rounded-lg border border-dark-border/50">
+                                  <span className="text-[9px] text-slate-400 block">Proteína</span>
+                                  <span className="text-xs font-black text-indigo-400 font-mono">{item.protein || 0}g</span>
+                                </div>
+                                <div className="bg-dark-card/80 p-1.5 rounded-lg border border-dark-border/50">
+                                  <span className="text-[9px] text-slate-400 block">Carbo</span>
+                                  <span className="text-xs font-black text-amber-400 font-mono">{item.carbs || 0}g</span>
+                                </div>
+                                <div className="bg-dark-card/80 p-1.5 rounded-lg border border-dark-border/50">
+                                  <span className="text-[9px] text-slate-400 block">Gordura</span>
+                                  <span className="text-xs font-black text-rose-400 font-mono">{item.fat || 0}g</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 

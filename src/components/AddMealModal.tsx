@@ -49,6 +49,15 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
   const [quickCarbs, setQuickCarbs] = useState<string>('');
   const [quickFat, setQuickFat] = useState<string>('');
 
+  // Estados para digitar e adicionar novo alimento avulso no modo manual
+  const [customFoodName, setCustomFoodName] = useState<string>('');
+  const [customPortion, setCustomPortion] = useState<string>('100g');
+  const [customCalories, setCustomCalories] = useState<string>('');
+  const [customProtein, setCustomProtein] = useState<string>('');
+  const [customCarbs, setCustomCarbs] = useState<string>('');
+  const [customFat, setCustomFat] = useState<string>('');
+  const [showCustomAutocomplete, setShowCustomAutocomplete] = useState<boolean>(false);
+
   // Estados de Imagem e IA
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -255,6 +264,53 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Selecionar sugestão no formulário manual avulso
+  const handleSelectCustomSuggestion = (food: FoodItem) => {
+    setCustomFoodName(food.name);
+    setCustomPortion(food.portion);
+    setCustomCalories(String(food.calories));
+    setCustomProtein(String(food.protein));
+    setCustomCarbs(String(food.carbs));
+    setCustomFat(String(food.fat));
+    setShowCustomAutocomplete(false);
+  };
+
+  // Adicionar alimento avulso digitado manualmente
+  const handleAddCustomFood = () => {
+    if (!customFoodName.trim()) {
+      feedback.warning('Digite o nome do alimento antes de adicionar.');
+      return;
+    }
+
+    const cal = Math.max(0, Number(customCalories) || 0);
+    const prot = Math.max(0, Number(customProtein) || 0);
+    const carb = Math.max(0, Number(customCarbs) || 0);
+    const fat = Math.max(0, Number(customFat) || 0);
+
+    setItems((prev) => [
+      ...prev,
+      {
+        name: customFoodName.trim(),
+        portion: customPortion.trim() || '1 porção',
+        calories: cal,
+        protein: prot,
+        carbs: carb,
+        fat: fat
+      }
+    ]);
+
+    feedback.success(`"${customFoodName.trim()}" adicionado à refeição!`);
+
+    // Resetar campos do formulário avulso
+    setCustomFoodName('');
+    setCustomPortion('100g');
+    setCustomCalories('');
+    setCustomProtein('');
+    setCustomCarbs('');
+    setCustomFat('');
+    setShowCustomAutocomplete(false);
+  };
+
   // Salvar refeição
   const handleSave = () => {
     let finalItems = [...items];
@@ -301,7 +357,12 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
     onClose();
   };
 
-  // Sugestões de autocomplete ativas
+  // Sugestões de autocomplete para o formulário de adicionar novo alimento manual
+  const customSuggestions = showCustomAutocomplete && customFoodName.trim()
+    ? FoodLibraryService.searchSuggestions(customFoodName, pastMeals, 6)
+    : [];
+
+  // Sugestões de autocomplete ativas para itens existentes na lista
   const autocompleteSuggestions = activeAutocompleteIdx !== null && autocompleteQuery.trim()
     ? FoodLibraryService.searchSuggestions(autocompleteQuery, pastMeals, 5)
     : [];
@@ -566,17 +627,169 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
           )}
 
           {/* ============================================================== */}
-          {/* MODO MANUAL: ATALHOS FREQUENTES E AUTOCOMPLETE DE ITENS        */}
+          {/* MODO MANUAL: DIGITAR ALIMENTO, ATALHOS FREQUENTES E AUTOCOMPLETE */}
           {/* ============================================================== */}
           {inputMode === 'manual' && (
             <div className="space-y-4">
-              {/* CHIPS DE ALIMENTOS FREQUENTES / REPETIDOS */}
-              <div className="p-3.5 rounded-2xl bg-dark-bg/60 border border-dark-border space-y-2.5">
+              {/* FORMULÁRIO DEDICADO: DIGITAR QUALQUER ALIMENTO COM AUTOCOMPLETE */}
+              <div className="p-4 rounded-2xl bg-dark-bg/80 border border-dark-border space-y-3 relative shadow-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-mint-400 flex items-center gap-1.5">
-                    <History className="w-3.5 h-3.5" /> Seus Alimentos Frequentes
+                    <Search className="w-3.5 h-3.5" /> Digitar Alimento Manual
                   </span>
-                  <span className="text-[10px] text-slate-500">1 toque para adicionar</span>
+                  <span className="text-[10px] text-slate-400">Qualquer item que desejar</span>
+                </div>
+
+                {/* Input de Nome com Autocomplete */}
+                <div className="relative">
+                  <label className="text-[11px] text-slate-400 font-medium block mb-1">
+                    Nome do Alimento *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={customFoodName}
+                      onChange={(e) => {
+                        setCustomFoodName(e.target.value);
+                        setShowCustomAutocomplete(true);
+                      }}
+                      onFocus={() => setShowCustomAutocomplete(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCustomFood();
+                        }
+                      }}
+                      placeholder="Ex: Iogurte grego, Castanhas, Arroz, Tilápia, Maçã..."
+                      className="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs font-bold text-slate-100 placeholder-slate-500 focus:outline-none focus:border-mint-500"
+                    />
+                    {customFoodName && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomFoodName('');
+                          setShowCustomAutocomplete(false);
+                        }}
+                        className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-300"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown de Autocomplete Flutuante */}
+                  {customSuggestions.length > 0 && (
+                    <div className="absolute left-0 top-full mt-1.5 w-full z-40 bg-dark-card border border-dark-border rounded-2xl shadow-2xl overflow-hidden py-1 divide-y divide-dark-border/40 animate-fadeIn">
+                      <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-dark-bg/60 flex items-center justify-between">
+                        <span>Sugestões Rápidas</span>
+                        <span className="text-[9px] text-mint-400">Toque p/ autopreencher</span>
+                      </div>
+                      {customSuggestions.map((sug, sIdx) => (
+                        <button
+                          key={sIdx}
+                          type="button"
+                          onClick={() => handleSelectCustomSuggestion(sug)}
+                          className="w-full text-left px-3 py-2 hover:bg-mint-500/10 flex items-center justify-between gap-2 transition-colors group"
+                        >
+                          <div>
+                            <span className="text-xs font-bold text-slate-200 group-hover:text-mint-400 block">
+                              {sug.name}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {sug.portion}
+                            </span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-[11px] font-black text-mint-400 block font-mono">
+                              {sug.calories} kcal
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-mono">
+                              {sug.protein}P • {sug.carbs}C • {sug.fat}G
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Porção e Calorias */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-1">Porção</label>
+                    <input
+                      type="text"
+                      value={customPortion}
+                      onChange={(e) => setCustomPortion(e.target.value)}
+                      placeholder="Ex: 100g, 1 fatia"
+                      className="w-full bg-dark-bg border border-dark-border rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-mint-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-1">Calorias (kcal) *</label>
+                    <input
+                      type="number"
+                      value={customCalories}
+                      onChange={(e) => setCustomCalories(e.target.value)}
+                      placeholder="Ex: 150"
+                      className="w-full bg-dark-bg border border-dark-border rounded-xl px-2.5 py-1.5 text-xs font-bold text-mint-400 focus:outline-none focus:border-mint-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Macros */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-1">Proteína (g)</label>
+                    <input
+                      type="number"
+                      value={customProtein}
+                      onChange={(e) => setCustomProtein(e.target.value)}
+                      placeholder="0"
+                      className="w-full bg-dark-bg border border-dark-border rounded-xl px-2 py-1.5 text-xs font-semibold text-indigo-400 focus:outline-none focus:border-mint-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-1">Carbo (g)</label>
+                    <input
+                      type="number"
+                      value={customCarbs}
+                      onChange={(e) => setCustomCarbs(e.target.value)}
+                      placeholder="0"
+                      className="w-full bg-dark-bg border border-dark-border rounded-xl px-2 py-1.5 text-xs font-semibold text-amber-400 focus:outline-none focus:border-mint-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-1">Gordura (g)</label>
+                    <input
+                      type="number"
+                      value={customFat}
+                      onChange={(e) => setCustomFat(e.target.value)}
+                      placeholder="0"
+                      className="w-full bg-dark-bg border border-dark-border rounded-xl px-2 py-1.5 text-xs font-semibold text-rose-400 focus:outline-none focus:border-mint-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Botão de Adicionar Alimento */}
+                <button
+                  type="button"
+                  onClick={handleAddCustomFood}
+                  disabled={!customFoodName.trim()}
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-mint-500 hover:bg-mint-400 text-dark-bg shadow-mint-glow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed active:scale-98"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Adicionar este Alimento à Refeição</span>
+                </button>
+              </div>
+
+              {/* CHIPS DE ALIMENTOS FREQUENTES (ATALHOS RÁPIDOS) */}
+              <div className="p-3.5 rounded-2xl bg-dark-bg/60 border border-dark-border space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <History className="w-3.5 h-3.5 text-mint-400" /> Ou escolha dos seus Mais Frequentes
+                  </span>
+                  <span className="text-[10px] text-slate-500">1 toque</span>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
@@ -599,10 +812,10 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
               {items.length === 0 && (
                 <div className="p-4 rounded-2xl bg-dark-bg/40 border border-dark-border space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                      Lançamento Rápido (Calorias Totais)
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Lançamento Rápido (Apenas Total)
                     </span>
-                    <span className="text-[10px] text-slate-500">Ou adicione itens abaixo</span>
+                    <span className="text-[10px] text-slate-500">Opcional</span>
                   </div>
 
                   <div>
