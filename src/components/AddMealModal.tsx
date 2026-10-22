@@ -19,6 +19,7 @@ interface AddMealModalProps {
   targetDate: string; // YYYY-MM-DD
   initialMealType?: MealType;
   pastMeals?: MealLog[];
+  editingMeal?: MealLog | null;
 }
 
 export const AddMealModal: React.FC<AddMealModalProps> = ({
@@ -29,25 +30,42 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
   onOpenSettings,
   targetDate,
   initialMealType = 'almoco',
-  pastMeals = []
+  pastMeals = [],
+  editingMeal = null
 }) => {
   if (!isOpen) return null;
 
   // Modos de entrada: 'ai' (Foto, Texto e/ou Áudio unificados) ou 'manual' (Itens frequentes e autocomplete)
-  const [inputMode, setInputMode] = useState<'ai' | 'manual'>('ai');
-  const [mealType, setMealType] = useState<MealType>(initialMealType);
-  const [mealName, setMealName] = useState<string>('');
+  const [inputMode, setInputMode] = useState<'ai' | 'manual'>(editingMeal ? 'manual' : 'ai');
+  const [mealType, setMealType] = useState<MealType>(editingMeal ? editingMeal.mealType : initialMealType);
+  const [mealName, setMealName] = useState<string>(editingMeal ? editingMeal.name : '');
   const [textDescription, setTextDescription] = useState<string>('');
-  const [notes, setNotes] = useState<string>('');
+  const [notes, setNotes] = useState<string>(editingMeal?.notes || '');
 
   // Itens da refeição
-  const [items, setItems] = useState<FoodItem[]>([]);
+  const [items, setItems] = useState<FoodItem[]>(editingMeal?.items ? JSON.parse(JSON.stringify(editingMeal.items)) : []);
 
   // Lançamento rápido manual
-  const [quickCalories, setQuickCalories] = useState<string>('');
-  const [quickProtein, setQuickProtein] = useState<string>('');
-  const [quickCarbs, setQuickCarbs] = useState<string>('');
-  const [quickFat, setQuickFat] = useState<string>('');
+  const [quickCalories, setQuickCalories] = useState<string>(
+    editingMeal && (!editingMeal.items || editingMeal.items.length === 0)
+      ? String(editingMeal.totalCalories || '')
+      : ''
+  );
+  const [quickProtein, setQuickProtein] = useState<string>(
+    editingMeal && (!editingMeal.items || editingMeal.items.length === 0)
+      ? String(editingMeal.totalProtein || '')
+      : ''
+  );
+  const [quickCarbs, setQuickCarbs] = useState<string>(
+    editingMeal && (!editingMeal.items || editingMeal.items.length === 0)
+      ? String(editingMeal.totalCarbs || '')
+      : ''
+  );
+  const [quickFat, setQuickFat] = useState<string>(
+    editingMeal && (!editingMeal.items || editingMeal.items.length === 0)
+      ? String(editingMeal.totalFat || '')
+      : ''
+  );
 
   // Estados para digitar e adicionar novo alimento avulso no modo manual
   const [customFoodName, setCustomFoodName] = useState<string>('');
@@ -81,12 +99,30 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
     setSpeechSupported(SpeechService.isSupported());
   }, []);
 
-  // Auto-definir nome inicial da refeição com base no tipo
+  // Sincronizar dados quando editingMeal mudar ou ao definir tipo inicial
   useEffect(() => {
-    if (!mealName) {
+    if (editingMeal) {
+      setInputMode('manual');
+      setMealType(editingMeal.mealType);
+      setMealName(editingMeal.name);
+      setItems(editingMeal.items ? JSON.parse(JSON.stringify(editingMeal.items)) : []);
+      setNotes(editingMeal.notes || '');
+      setQuickCalories(
+        (!editingMeal.items || editingMeal.items.length === 0) ? String(editingMeal.totalCalories || '') : ''
+      );
+      setQuickProtein(
+        (!editingMeal.items || editingMeal.items.length === 0) ? String(editingMeal.totalProtein || '') : ''
+      );
+      setQuickCarbs(
+        (!editingMeal.items || editingMeal.items.length === 0) ? String(editingMeal.totalCarbs || '') : ''
+      );
+      setQuickFat(
+        (!editingMeal.items || editingMeal.items.length === 0) ? String(editingMeal.totalFat || '') : ''
+      );
+    } else if (!mealName) {
       setMealName(MEAL_TYPE_LABELS[mealType]);
     }
-  }, [mealType]);
+  }, [editingMeal, mealType]);
 
   // Alimentos mais frequentes do usuário para atalhos com 1 clique
   const frequentFoods = FoodLibraryService.getTopFrequentFoods(pastMeals, 8);
@@ -341,9 +377,9 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
     const totalFt = finalItems.reduce((acc, it) => acc + (Number(it.fat) || 0), 0);
 
     const mealLog: MealLog = {
-      id: `meal_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-      date: targetDate,
-      timestamp: new Date().toISOString(),
+      id: editingMeal ? editingMeal.id : `meal_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      date: editingMeal ? editingMeal.date : targetDate,
+      timestamp: editingMeal ? editingMeal.timestamp : new Date().toISOString(),
       mealType,
       name: mealName.trim() || MEAL_TYPE_LABELS[mealType],
       items: finalItems,
@@ -355,7 +391,7 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
     };
 
     onSaveMeal(mealLog);
-    feedback.success('Refeição registrada com sucesso!');
+    feedback.success(editingMeal ? 'Refeição atualizada com sucesso!' : 'Refeição registrada com sucesso!');
     onClose();
   };
 
@@ -376,14 +412,14 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-dark-border bg-dark-bg/40">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-mint-500/10 border border-mint-500/20 flex items-center justify-center text-mint-400">
-              <Flame className="w-5 h-5" />
+              {editingMeal ? <Edit3 className="w-5 h-5" /> : <Flame className="w-5 h-5" />}
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-100">
-                Registrar Refeição
+                {editingMeal ? 'Editar Refeição' : 'Registrar Refeição'}
               </h2>
               <p className="text-xs text-slate-400">
-                Data: {new Date(targetDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+                {editingMeal ? 'Altere tipo, alimentos, porções ou macros' : `Data: ${new Date(targetDate + 'T12:00:00').toLocaleDateString('pt-BR')}`}
               </p>
             </div>
           </div>
@@ -1079,7 +1115,7 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
               disabled={items.length === 0 && (!quickCalories || Number(quickCalories) <= 0)}
               className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-mint-500 hover:bg-mint-400 text-dark-bg shadow-mint-glow-sm transition-all transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             >
-              <Check className="w-4 h-4" /> Salvar Refeição
+              <Check className="w-4 h-4" /> {editingMeal ? 'Salvar Alterações' : 'Salvar Refeição'}
             </button>
           </div>
         </div>

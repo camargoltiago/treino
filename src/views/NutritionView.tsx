@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { 
   Flame, Plus, Camera, Sparkles, Settings2, Droplets, ChevronLeft, ChevronRight, 
-  Trash2, Clock, Calendar, Check, AlertCircle, UtensilsCrossed, ChevronDown 
+  Trash2, Clock, Calendar, Check, AlertCircle, UtensilsCrossed, ChevronDown, Edit3 
 } from 'lucide-react';
 import { 
   MealLog, NutritionGoals, AiNutritionSettings, MealType, 
   MEAL_TYPE_LABELS, MEAL_TYPE_EMOJIS 
 } from '../types';
 import { AddMealModal } from '../components/AddMealModal';
+import { MealDetailsModal } from '../components/MealDetailsModal';
 import { NutritionSettingsModal } from '../components/NutritionSettingsModal';
 import { feedback } from '../services/feedback';
 
@@ -47,7 +48,8 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [defaultMealType, setDefaultMealType] = useState<MealType>('almoco');
-  const [expandedItemKey, setExpandedItemKey] = useState<string | null>(null);
+  const [selectedMealDetails, setSelectedMealDetails] = useState<MealLog | null>(null);
+  const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
 
   const todayStr = getTodayDateStr();
   const isToday = selectedDate === todayStr;
@@ -418,110 +420,64 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
               return (
                 <div
                   key={meal.id}
-                  className="rounded-2xl border border-dark-border bg-dark-card p-4 space-y-3 hover:border-mint-500/30 transition-all"
+                  onClick={() => setSelectedMealDetails(meal)}
+                  className="rounded-3xl border border-dark-border bg-dark-card p-4 space-y-3 hover:border-mint-500/40 hover:bg-dark-card/90 transition-all cursor-pointer select-none group active:scale-[0.99] shadow-md"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xl">{MEAL_TYPE_EMOJIS[meal.mealType] || '🍴'}</span>
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-2xl p-2 bg-dark-surface border border-dark-border rounded-2xl group-hover:scale-105 transition-transform shrink-0">
+                        {MEAL_TYPE_EMOJIS[meal.mealType] || '🍴'}
+                      </span>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-mint-400 transition-colors truncate">
                           {meal.name}
                         </h4>
-                        <span className="text-[10px] text-slate-400 font-medium">
+                        <span className="text-[10px] text-slate-400 font-medium block">
                           {MEAL_TYPE_LABELS[meal.mealType]} • {timeFormatted}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-black text-mint-400 bg-mint-500/10 px-2.5 py-1 rounded-xl border border-mint-500/20">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-sm font-black text-mint-400 bg-mint-500/10 px-2.5 py-1 rounded-xl border border-mint-500/20 font-mono">
                         {meal.totalCalories} kcal
                       </span>
-                      <button
-                        onClick={() => handleDelete(meal)}
-                        className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                        title="Excluir refeição"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-mint-400 group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </div>
 
-                  {/* Alimentos listados com expansão de macros por item */}
+                  {/* Resumo visual dos alimentos da refeição (sem collapse) */}
                   {meal.items && meal.items.length > 0 && (
-                    <div className="pt-2 border-t border-dark-border/60 space-y-1.5">
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-wider px-1">
-                        <span>Alimentos da refeição</span>
-                        <span>Toque p/ ver macros</span>
-                      </div>
-                      {meal.items.map((item, idx) => {
-                        const itemKey = `${meal.id}_${idx}`;
-                        const isExpanded = expandedItemKey === itemKey;
-
-                        return (
-                          <div
+                    <div className="pt-2 border-t border-dark-border/60">
+                      <div className="flex flex-wrap gap-1.5">
+                        {meal.items.slice(0, 4).map((it, idx) => (
+                          <span
                             key={idx}
-                            onClick={() => setExpandedItemKey(isExpanded ? null : itemKey)}
-                            className="rounded-xl p-2 bg-dark-bg/40 hover:bg-dark-bg/70 border border-transparent hover:border-dark-border cursor-pointer transition-all space-y-2 select-none group"
+                            className="text-[11px] font-medium bg-dark-surface px-2.5 py-1 rounded-xl border border-dark-border text-slate-300"
                           >
-                            <div className="flex items-center justify-between text-xs text-slate-200">
-                              <div className="flex items-center gap-1.5 min-w-0 pr-2">
-                                <span className={`w-1.5 h-1.5 rounded-full transition-colors shrink-0 ${isExpanded ? 'bg-mint-400' : 'bg-slate-500 group-hover:bg-mint-400/60'}`} />
-                                <span className="font-semibold truncate">
-                                  {item.name}
-                                </span>
-                                <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                                  ({item.portion})
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-xs font-bold text-mint-400 font-mono">
-                                  {item.calories} kcal
-                                </span>
-                                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-mint-400' : 'group-hover:text-slate-200'}`} />
-                              </div>
-                            </div>
-
-                            {/* Detalhes de macros do item individual */}
-                            {isExpanded && (
-                              <div className="pt-2 border-t border-dark-border/40 grid grid-cols-4 gap-1.5 text-center animate-fadeIn">
-                                <div className="bg-dark-card/80 p-1.5 rounded-lg border border-dark-border/50">
-                                  <span className="text-[9px] text-slate-400 block">Calorias</span>
-                                  <span className="text-xs font-black text-mint-400 font-mono">{item.calories} <span className="text-[9px]">kcal</span></span>
-                                </div>
-                                <div className="bg-dark-card/80 p-1.5 rounded-lg border border-dark-border/50">
-                                  <span className="text-[9px] text-slate-400 block">Proteína</span>
-                                  <span className="text-xs font-black text-indigo-400 font-mono">{item.protein || 0}g</span>
-                                </div>
-                                <div className="bg-dark-card/80 p-1.5 rounded-lg border border-dark-border/50">
-                                  <span className="text-[9px] text-slate-400 block">Carbo</span>
-                                  <span className="text-xs font-black text-amber-400 font-mono">{item.carbs || 0}g</span>
-                                </div>
-                                <div className="bg-dark-card/80 p-1.5 rounded-lg border border-dark-border/50">
-                                  <span className="text-[9px] text-slate-400 block">Gordura</span>
-                                  <span className="text-xs font-black text-rose-400 font-mono">{item.fat || 0}g</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                            {it.name} <span className="text-slate-500 text-[10px]">({it.portion})</span>
+                          </span>
+                        ))}
+                        {meal.items.length > 4 && (
+                          <span className="text-[10px] font-bold text-mint-400 bg-mint-500/10 px-2 py-1 rounded-xl border border-mint-500/20 flex items-center">
+                            +{meal.items.length - 4} mais
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
 
-                  {/* Macros da Refeição */}
-                  <div className="flex items-center justify-between pt-2 border-t border-dark-border/40 text-[10px] text-slate-400 font-semibold">
-                    <div className="flex items-center gap-3">
+                  {/* Macros da Refeição e Dica de Ação */}
+                  <div className="flex items-center justify-between pt-2 border-t border-dark-border/40 text-[11px] text-slate-400 font-semibold">
+                    <div className="flex items-center gap-3 font-mono">
                       <span>P: <strong className="text-indigo-400">{meal.totalProtein || 0}g</strong></span>
                       <span>C: <strong className="text-amber-400">{meal.totalCarbs || 0}g</strong></span>
                       <span>G: <strong className="text-rose-400">{meal.totalFat || 0}g</strong></span>
                     </div>
 
-                    {meal.notes && (
-                      <span className="italic text-slate-500 truncate max-w-[150px]" title={meal.notes}>
-                        {meal.notes}
-                      </span>
-                    )}
+                    <span className="text-[10px] text-mint-400/80 group-hover:text-mint-400 font-bold transition-colors">
+                      Ver detalhes & editar →
+                    </span>
                   </div>
                 </div>
               );
@@ -530,11 +486,36 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
         )}
       </div>
 
-      {/* MODAL ADICIONAR REFEIÇÃO */}
+      {/* MODAL DETALHES DA REFEIÇÃO */}
+      <MealDetailsModal
+        isOpen={!!selectedMealDetails}
+        meal={selectedMealDetails}
+        onClose={() => setSelectedMealDetails(null)}
+        onEdit={(mealToEdit) => {
+          setSelectedMealDetails(null);
+          setEditingMeal(mealToEdit);
+          setIsAddModalOpen(true);
+        }}
+        onDelete={(mealToDelete) => {
+          setSelectedMealDetails(null);
+          handleDelete(mealToDelete);
+        }}
+      />
+
+      {/* MODAL ADICIONAR / EDITAR REFEIÇÃO */}
       <AddMealModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSaveMeal={onSaveMeal}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditingMeal(null);
+        }}
+        onSaveMeal={(savedMeal) => {
+          onSaveMeal(savedMeal);
+          setEditingMeal(null);
+          if (selectedMealDetails && selectedMealDetails.id === savedMeal.id) {
+            setSelectedMealDetails(savedMeal);
+          }
+        }}
         settings={deepseekSettings}
         onOpenSettings={() => {
           setIsAddModalOpen(false);
@@ -543,6 +524,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
         targetDate={selectedDate}
         initialMealType={defaultMealType}
         pastMeals={meals}
+        editingMeal={editingMeal}
       />
 
       {/* MODAL CONFIGURAÇÕES DE NUTRIÇÃO & IA */}

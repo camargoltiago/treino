@@ -93,7 +93,10 @@ export const App: React.FC = () => {
   // Manipuladores de Nutrição
   const handleSaveMeal = (newMeal: MealLog) => {
     setMeals((prev) => {
-      const updated = [newMeal, ...prev];
+      const exists = prev.some((m) => m.id === newMeal.id);
+      const updated = exists
+        ? prev.map((m) => (m.id === newMeal.id ? newMeal : m))
+        : [newMeal, ...prev];
       StorageService.saveMeals(updated);
       return updated;
     });
