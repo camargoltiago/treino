@@ -39,7 +39,9 @@ export const App: React.FC = () => {
   const [meals, setMeals] = useState<MealLog[]>(initialNutrition.meals);
   const [goals, setGoals] = useState<NutritionGoals>(initialNutrition.goals);
   const [waterLogs, setWaterLogs] = useState<Record<string, number>>(initialNutrition.waterLogs);
-  const [aiSettings, setAiSettings] = useState<AiNutritionSettings>(initialNutrition.deepseek);
+  const [aiSettings, setAiSettings] = useState<AiNutritionSettings>(
+    initialNutrition.aiSettings || initialNutrition.gemini || initialNutrition.deepseek
+  );
   const [isNutritionSettingsOpen, setIsNutritionSettingsOpen] = useState<boolean>(false);
 
   // Estados do Treinador IA
@@ -140,6 +142,16 @@ export const App: React.FC = () => {
       if (nutrition.waterLogs) {
         setWaterLogs(nutrition.waterLogs);
         StorageService.saveWater(nutrition.waterLogs);
+      }
+      const ai = nutrition.gemini || nutrition.aiSettings || nutrition.deepseek;
+      if (ai && typeof ai === 'object') {
+        const normalizedAi: AiNutritionSettings = {
+          apiKey: ai.apiKey || '',
+          model: ai.model || 'gemini-3.8-flash',
+          provider: 'gemini'
+        };
+        setAiSettings(normalizedAi);
+        StorageService.saveAiSettings(normalizedAi);
       }
     }
   };
@@ -613,7 +625,7 @@ export const App: React.FC = () => {
   };
 
   // Análise de Recuperação Muscular
-  const recoveryData = calculateMuscleRecovery(history);
+  const recoveryData = calculateMuscleRecovery(history, workouts);
 
   // Resumo de Nutrição para exibição no TodayView
   const getTodayDateStr = () => {
@@ -645,6 +657,7 @@ export const App: React.FC = () => {
       {/* Top Header */}
       <Header
         activeSession={activeSession}
+        workouts={workouts}
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(prev => !prev)}
         theme={theme}
@@ -680,7 +693,7 @@ export const App: React.FC = () => {
             meals={meals}
             goals={goals}
             waterLogs={waterLogs}
-            deepseekSettings={aiSettings}
+            aiSettings={aiSettings}
             onSaveMeal={handleSaveMeal}
             onDeleteMeal={handleDeleteMeal}
             onUpdateWater={handleUpdateWater}
@@ -783,6 +796,7 @@ export const App: React.FC = () => {
       {/* Modal de Finalização de Treino */}
       <FinishWorkoutModal
         session={showFinishModal ? activeSession : null}
+        workouts={workouts}
         onConfirm={handleConfirmFinishWorkout}
         onCancel={() => setShowFinishModal(false)}
       />

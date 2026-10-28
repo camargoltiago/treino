@@ -60,6 +60,7 @@ export interface AiNutritionSettings {
   provider?: 'gemini' | 'deepseek';
 }
 
-// Mantendo compatibilidade com DeepSeekSettings
+// Compatibilidade de tipos
+export type GeminiSettings = AiNutritionSettings;
 export type DeepSeekSettings = AiNutritionSettings;
 

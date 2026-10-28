@@ -16,7 +16,8 @@ interface NutritionViewProps {
   meals: MealLog[];
   goals: NutritionGoals;
   waterLogs: Record<string, number>;
-  deepseekSettings: AiNutritionSettings;
+  aiSettings?: AiNutritionSettings;
+  deepseekSettings?: AiNutritionSettings;
   onSaveMeal: (meal: MealLog) => void;
   onDeleteMeal: (mealId: string) => void;
   onUpdateWater: (date: string, amountMl: number) => void;
@@ -28,6 +29,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
   meals,
   goals,
   waterLogs,
+  aiSettings,
   deepseekSettings,
   onSaveMeal,
   onDeleteMeal,
@@ -35,6 +37,11 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
   onSaveSettings,
   onOpenAiCoach
 }) => {
+  const currentAiSettings = aiSettings || deepseekSettings || {
+    apiKey: '',
+    model: 'gemini-3.8-flash',
+    provider: 'gemini' as const
+  };
   // Data selecionada (padrão: hoje em formato YYYY-MM-DD local)
   const getTodayDateStr = () => {
     const d = new Date();
@@ -516,7 +523,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
             setSelectedMealDetails(savedMeal);
           }
         }}
-        settings={deepseekSettings}
+        settings={currentAiSettings}
         onOpenSettings={() => {
           setIsAddModalOpen(false);
           setIsSettingsOpen(true);
@@ -531,7 +538,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
       <NutritionSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        settings={deepseekSettings}
+        settings={currentAiSettings}
         goals={goals}
         onSave={onSaveSettings}
       />

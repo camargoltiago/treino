@@ -27,6 +27,14 @@ export interface FoodLibraryItem extends FoodItem {
   lastUsedTimestamp?: string;
 }
 
+export function normalizeFoodText(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 export const FoodLibraryService = {
   /**
    * Extrai e agrega todos os alimentos consumidos no histórico de refeições,
@@ -37,7 +45,7 @@ export const FoodLibraryService = {
 
     // 1. Inicializar com a biblioteca padrão
     DEFAULT_POPULAR_FOODS.forEach((item) => {
-      const key = item.name.toLowerCase().trim();
+      const key = normalizeFoodText(item.name);
       foodMap[key] = { ...item, frequency: 1 };
     });
 
@@ -51,7 +59,7 @@ export const FoodLibraryService = {
       if (Array.isArray(meal.items)) {
         meal.items.forEach((item) => {
           if (!item.name || !item.name.trim()) return;
-          const key = item.name.toLowerCase().trim();
+          const key = normalizeFoodText(item.name);
 
           if (foodMap[key]) {
             foodMap[key].frequency += 2; // alimentos do usuário têm peso maior
@@ -87,16 +95,23 @@ export const FoodLibraryService = {
   },
 
   /**
-   * Busca alimentos que combinam com o termo digitado (para autocomplete)
+   * Busca alimentos que combinam com o termo digitado (para autocomplete), ignorando acentos
    */
   searchSuggestions(query: string, pastMeals: MealLog[] = [], limit = 6): FoodItem[] {
-    const term = query.toLowerCase().trim();
-    if (!term) return [];
+    const cleanTerm = normalizeFoodText(query);
+    if (!cleanTerm) return [];
 
+    const queryWords = cleanTerm.split(/\s+/).filter(Boolean);
     const allFoods = this.getAllKnownFoods(pastMeals);
 
     return allFoods
-      .filter((food) => food.name.toLowerCase().includes(term))
+      .filter((food) => {
+        const cleanFoodName = normalizeFoodText(food.name);
+        return (
+          cleanFoodName.includes(cleanTerm) ||
+          queryWords.every((w) => cleanFoodName.includes(w))
+        );
+      })
       .slice(0, limit)
       .map(({ frequency, lastUsedTimestamp, ...foodItem }) => foodItem);
   },

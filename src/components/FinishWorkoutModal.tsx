@@ -1,17 +1,19 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { Trophy, Clock, CheckCircle2, Dumbbell, AlertTriangle } from 'lucide-react';
-import { WorkoutSession } from '../types';
+import { WorkoutSession, WorkoutPlan } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 
 interface FinishWorkoutModalProps {
   session: WorkoutSession | null;
+  workouts?: Record<string, WorkoutPlan>;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 export const FinishWorkoutModal: React.FC<FinishWorkoutModalProps> = ({
   session,
+  workouts,
   onConfirm,
   onCancel
 }) => {
@@ -28,7 +30,10 @@ export const FinishWorkoutModal: React.FC<FinishWorkoutModalProps> = ({
 
   if (!session) return null;
 
-  const plan = WORKOUTS_DATA[session.workoutId];
+  const plan = (workouts && workouts[session.workoutId]) || WORKOUTS_DATA[session.workoutId] || {
+    totalPlannedSets: session.exercises.length * 3,
+    exercises: []
+  };
   const startTime = new Date(session.startedAt).getTime();
   const now = Date.now();
   const durationSeconds = Math.max(60, Math.round((now - startTime) / 1000));

@@ -1,10 +1,11 @@
 import React from 'react';
 import { Volume2, VolumeX, Download, Play, Sun, Moon, Key } from 'lucide-react';
-import { WorkoutSession } from '../types';
+import { WorkoutSession, WorkoutPlan } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 
 interface HeaderProps {
   activeSession: WorkoutSession | null;
+  workouts?: Record<string, WorkoutPlan>;
   soundEnabled: boolean;
   onToggleSound: () => void;
   theme: 'dark' | 'light';
@@ -17,6 +18,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   activeSession,
+  workouts,
   soundEnabled,
   onToggleSound,
   theme,
@@ -26,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onInstallPwa,
   onOpenAiSettings
 }) => {
-  const plan = activeSession ? WORKOUTS_DATA[activeSession.workoutId] : null;
+  const plan = activeSession ? ((workouts && workouts[activeSession.workoutId]) || WORKOUTS_DATA[activeSession.workoutId]) : null;
 
   return (
     <header className="sticky top-0 z-30 bg-dark-bg/95 backdrop-blur-md border-b border-dark-border select-none">

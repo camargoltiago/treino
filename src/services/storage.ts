@@ -6,6 +6,7 @@ export const WORKOUTS_STORAGE_KEY = 'meu_treino_hibrido_workouts_v2';
 export const NUTRITION_STORAGE_KEY = 'meu_treino_hibrido_nutrition_v2';
 export const NUTRITION_GOALS_KEY = 'meu_treino_nutrition_goals_v2';
 export const AI_SETTINGS_KEY = 'meu_treino_ai_nutrition_settings_v3';
+export const GEMINI_SETTINGS_KEY = 'meu_treino_gemini_settings';
 export const DEEPSEEK_SETTINGS_KEY = 'meu_treino_deepseek_settings';
 export const WATER_STORAGE_KEY = 'meu_treino_water_v2';
 export const COACH_ASSESSMENT_KEY = 'meu_treino_coach_assessment_v1';
@@ -139,12 +140,14 @@ export const StorageService = {
     meals: MealLog[];
     goals: NutritionGoals;
     waterLogs: Record<string, number>;
-    deepseek: DeepSeekSettings;
+    gemini: AiNutritionSettings;
+    aiSettings: AiNutritionSettings;
+    deepseek: AiNutritionSettings;
   } {
     let meals: MealLog[] = [];
     let goals: NutritionGoals = { ...DEFAULT_NUTRITION_GOALS };
     let waterLogs: Record<string, number> = {};
-    let deepseek: DeepSeekSettings = { ...DEFAULT_DEEPSEEK_SETTINGS };
+    let aiSettings: AiNutritionSettings = { ...DEFAULT_AI_SETTINGS };
 
     try {
       const rawMeals = localStorage.getItem(NUTRITION_STORAGE_KEY);
@@ -167,13 +170,19 @@ export const StorageService = {
         if (parsed && typeof parsed === 'object') waterLogs = parsed;
       }
 
-      const rawAi = localStorage.getItem(AI_SETTINGS_KEY) || localStorage.getItem(DEEPSEEK_SETTINGS_KEY);
+      const rawAi =
+        localStorage.getItem(AI_SETTINGS_KEY) ||
+        localStorage.getItem(GEMINI_SETTINGS_KEY) ||
+        localStorage.getItem(DEEPSEEK_SETTINGS_KEY);
       if (rawAi) {
         const parsed = JSON.parse(rawAi);
         if (parsed && typeof parsed === 'object') {
-          deepseek = { ...DEFAULT_AI_SETTINGS, ...parsed };
-          if (!deepseek.model || deepseek.model === 'gemini-2.5-flash') {
-            deepseek.model = 'gemini-3.8-flash';
+          aiSettings = { ...DEFAULT_AI_SETTINGS, ...parsed };
+          if (!aiSettings.model || aiSettings.model === 'gemini-2.5-flash') {
+            aiSettings.model = 'gemini-3.8-flash';
+          }
+          if (!aiSettings.provider) {
+            aiSettings.provider = 'gemini';
           }
         }
       }
@@ -181,7 +190,14 @@ export const StorageService = {
       console.error('Erro ao carregar dados de nutrição:', err);
     }
 
-    return { meals, goals, waterLogs, deepseek };
+    return {
+      meals,
+      goals,
+      waterLogs,
+      gemini: aiSettings,
+      aiSettings,
+      deepseek: aiSettings
+    };
   },
 
   saveMeals(meals: MealLog[]) {
@@ -249,8 +265,17 @@ export const StorageService = {
     history: WorkoutSession[],
     activeSession: WorkoutSession | null,
     workouts: Record<string, WorkoutPlan>,
-    nutrition?: { meals: MealLog[]; goals: NutritionGoals; waterLogs: Record<string, number> }
+    nutrition?: {
+      meals: MealLog[];
+      goals: NutritionGoals;
+      waterLogs: Record<string, number>;
+      gemini?: AiNutritionSettings;
+      aiSettings?: AiNutritionSettings;
+      deepseek?: AiNutritionSettings;
+    }
   ) {
+    const nut = nutrition || this.loadNutrition();
+    const aiConfig = nut.gemini || nut.aiSettings || nut.deepseek || DEFAULT_AI_SETTINGS;
     const payload = {
       app: 'MuscleTrack — Treino Híbrido',
       exportedAt: new Date().toISOString(),
@@ -259,7 +284,13 @@ export const StorageService = {
       workouts,
       history,
       activeSession,
-      nutrition: nutrition || this.loadNutrition()
+      nutrition: {
+        meals: nut.meals,
+        goals: nut.goals,
+        waterLogs: nut.waterLogs,
+        gemini: aiConfig,
+        aiSettings: aiConfig
+      }
     };
 
     this.downloadJSON(payload, `muscletrack_backup_completo_${new Date().toISOString().split('T')[0]}.json`);
