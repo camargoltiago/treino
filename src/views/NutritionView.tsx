@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { 
   MealLog, NutritionGoals, AiNutritionSettings, MealType, 
-  MEAL_TYPE_LABELS, MEAL_TYPE_EMOJIS 
+  MEAL_TYPE_LABELS, MEAL_TYPE_EMOJIS, getMealTypeByCurrentTime 
 } from '../types';
 import { AddMealModal } from '../components/AddMealModal';
 import { MealDetailsModal } from '../components/MealDetailsModal';
@@ -54,7 +54,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
   const [selectedDate, setSelectedDate] = useState<string>(getTodayDateStr());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [defaultMealType, setDefaultMealType] = useState<MealType>('almoco');
+  const [defaultMealType, setDefaultMealType] = useState<MealType>(getMealTypeByCurrentTime());
   const [selectedMealDetails, setSelectedMealDetails] = useState<MealLog | null>(null);
   const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
 
@@ -129,8 +129,8 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
     return d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
-  const openAddModalWith = (type: MealType) => {
-    setDefaultMealType(type);
+  const openAddModalWith = (type?: MealType) => {
+    setDefaultMealType(type || getMealTypeByCurrentTime());
     setIsAddModalOpen(true);
   };
 
@@ -362,7 +362,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
       {/* BOTÃO PRINCIPAL DE ADICIONAR REFEIÇÃO */}
       <button
         type="button"
-        onClick={() => openAddModalWith('almoco')}
+        onClick={() => openAddModalWith()}
         className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-mint-500 via-mint-400 to-emerald-400 text-dark-bg font-black text-sm shadow-[0_0_20px_rgba(0,229,153,0.4)] hover:shadow-[0_0_25px_rgba(0,229,153,0.6)] transition-all transform active:scale-[0.98] flex items-center justify-center gap-2.5"
       >
         <Plus className="w-5 h-5 text-dark-bg stroke-[2.5]" />
@@ -377,7 +377,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
             <Clock className="w-3.5 h-3.5 text-mint-400" /> Refeições de {formatDateTitle(selectedDate)} ({dayMeals.length})
           </h3>
           <button
-            onClick={() => openAddModalWith('lanche')}
+            onClick={() => openAddModalWith()}
             className="text-xs text-mint-400 hover:text-mint-300 font-semibold flex items-center gap-1"
           >
             <Plus className="w-3.5 h-3.5" /> Adicionar

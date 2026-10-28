@@ -3,7 +3,7 @@ import {
   X, Camera, Edit3, Sparkles, Loader2, Plus, Trash2, 
   Check, AlertTriangle, Key, Flame, RefreshCw, Mic, MicOff, Search, History
 } from 'lucide-react';
-import { MealLog, MealType, FoodItem, AiNutritionSettings, MEAL_TYPE_LABELS, MEAL_TYPE_EMOJIS } from '../types';
+import { MealLog, MealType, FoodItem, AiNutritionSettings, MEAL_TYPE_LABELS, MEAL_TYPE_EMOJIS, getMealTypeByCurrentTime } from '../types';
 import { compressImageToBase64 } from '../services/imageCompression';
 import { GeminiNutritionService, NutritionAiAnalysisResult } from '../services/gemini';
 import { SpeechService } from '../services/speech';
@@ -29,15 +29,17 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
   settings,
   onOpenSettings,
   targetDate,
-  initialMealType = 'almoco',
+  initialMealType,
   pastMeals = [],
   editingMeal = null
 }) => {
   if (!isOpen) return null;
 
+  const defaultCurrentType = initialMealType || getMealTypeByCurrentTime();
+
   // Modos de entrada: 'ai' (Foto, Texto e/ou Áudio unificados) ou 'manual' (Itens frequentes e autocomplete)
   const [inputMode, setInputMode] = useState<'ai' | 'manual'>(editingMeal ? 'manual' : 'ai');
-  const [mealType, setMealType] = useState<MealType>(editingMeal ? editingMeal.mealType : initialMealType);
+  const [mealType, setMealType] = useState<MealType>(editingMeal ? editingMeal.mealType : defaultCurrentType);
   const [mealName, setMealName] = useState<string>(editingMeal ? editingMeal.name : '');
   const [textDescription, setTextDescription] = useState<string>('');
   const [notes, setNotes] = useState<string>(editingMeal?.notes || '');
@@ -125,9 +127,10 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
       setImageBase64(null);
       setTextDescription('');
     } else {
+      const defaultType = initialMealType || getMealTypeByCurrentTime();
       setInputMode('ai');
-      setMealType(initialMealType);
-      setMealName(MEAL_TYPE_LABELS[initialMealType]);
+      setMealType(defaultType);
+      setMealName(MEAL_TYPE_LABELS[defaultType]);
       setItems([]);
       setNotes('');
       setQuickCalories('');
