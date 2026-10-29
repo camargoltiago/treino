@@ -43,10 +43,83 @@ export function resolveAnimationArchetype(
   name?: string,
   muscleGroup?: MuscleGroup
 ): AnimationArchetype {
+  // Normalizar removendo acentos e espaços extras
+  const n = (name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
   const cleanId = (exerciseId || '').toUpperCase().trim();
-  const n = (name || '').toLowerCase();
 
-  // 1. Mapeamento exato dos IDs oficiais da planilha
+  // 1. RECONHECIMENTO PRIORITÁRIO POR NOME (A verdade do exercício que o usuário está executando)
+  if (n) {
+    if (n.includes('inclinad') && (n.includes('supino') || n.includes('press') || n.includes('halter'))) {
+      return 'bench_press_incline';
+    }
+    if (n.includes('supino') && (n.includes('maquina') || n.includes('articulad'))) {
+      return 'chest_press_machine';
+    }
+    if (n.includes('supino') || n.includes('peck deck') || n.includes('voador') || n.includes('crucifixo') || n.includes('flexao') || n.includes('apoio')) {
+      return 'bench_press_flat';
+    }
+    if (n.includes('puxada') || n.includes('pulldown') || n.includes('barra fixa') || n.includes('graviton')) {
+      return 'lat_pulldown';
+    }
+    if (n.includes('remada') && (n.includes('sentad') || n.includes('cabo') || n.includes('baixa') || n.includes('polia'))) {
+      return 'cable_seated_row';
+    }
+    if (n.includes('remada') && (n.includes('articulad') || n.includes('maquina') || n.includes('apoiad') || n.includes('cavalinho') || n.includes('curvada'))) {
+      return 'machine_row';
+    }
+    if (n.includes('remada')) {
+      return 'cable_seated_row';
+    }
+    if (n.includes('elevacao lateral') || n.includes('desenvolvimento') || n.includes('ombro') || n.includes('arnold')) {
+      return 'lateral_raise';
+    }
+    if (n.includes('martelo')) {
+      return 'hammer_curl';
+    }
+    if (n.includes('rosca') || n.includes('biceps') || n.includes('scott') || n.includes('concentrada')) {
+      return 'bicep_curl';
+    }
+    if (n.includes('triceps')) {
+      if (n.includes('corda')) return 'tricep_rope';
+      return 'tricep_pushdown';
+    }
+    if (n.includes('leg press') && (n.includes('45') || n.includes('inclinad'))) {
+      return 'leg_press_45';
+    }
+    if (n.includes('leg press')) {
+      return 'leg_press_horizontal';
+    }
+    if (n.includes('agachamento') || n.includes('squat') || n.includes('hack') || n.includes('afundo') || n.includes('bulgaro') || n.includes('passada') || n.includes('sumo') || n.includes('elevacao pelvica') || n.includes('pelvica')) {
+      return 'squat';
+    }
+    if (n.includes('rdl') || n.includes('stiff') || n.includes('levantamento terra') || n.includes('terra')) {
+      return 'romanian_deadlift';
+    }
+    if (n.includes('extensora') || n.includes('extensao')) {
+      return 'leg_extension';
+    }
+    if (n.includes('mesa flexora') || (n.includes('flexora') && n.includes('deitad'))) {
+      return 'lying_leg_curl';
+    }
+    if (n.includes('flexora')) {
+      return 'seated_leg_curl';
+    }
+    if (n.includes('panturrilha') && (n.includes('sentad') || n.includes('soleo'))) {
+      return 'seated_calf_raise';
+    }
+    if (n.includes('panturrilha') || n.includes('gemeos')) {
+      return 'standing_calf_raise';
+    }
+    if (n.includes('abdom') || n.includes('crunch') || n.includes('core') || n.includes('infra') || n.includes('prancha')) {
+      return 'cable_crunch';
+    }
+  }
+
+  // 2. Mapeamento por IDs originais (apenas se o nome for genérico ou omitido)
   const idMap: Record<string, AnimationArchetype> = {
     'A1': 'bench_press_incline',
     'A2': 'lat_pulldown',
@@ -72,71 +145,8 @@ export function resolveAnimationArchetype(
     'C8': 'seated_calf_raise',
   };
 
-  if (cleanId && idMap[cleanId]) {
+  if (!n && cleanId && idMap[cleanId]) {
     return idMap[cleanId];
-  }
-
-  // 2. Reconhecimento inteligente por palavras-chave no nome
-  if (n.includes('inclinad') && (n.includes('supino') || n.includes('press') || n.includes('halter'))) {
-    return 'bench_press_incline';
-  }
-  if (n.includes('supino') && (n.includes('maquina') || n.includes('máquina'))) {
-    return 'chest_press_machine';
-  }
-  if (n.includes('supino') || n.includes('peck deck') || n.includes('voador') || n.includes('crucifixo') || n.includes('flexão') || n.includes('flexao')) {
-    return 'bench_press_flat';
-  }
-  if (n.includes('puxada') || n.includes('pulldown') || n.includes('barra fixa') || n.includes('graviton')) {
-    return 'lat_pulldown';
-  }
-  if (n.includes('remada') && (n.includes('sentad') || n.includes('cabo') || n.includes('baixa') || n.includes('polia'))) {
-    return 'cable_seated_row';
-  }
-  if (n.includes('remada') && (n.includes('articulad') || n.includes('maquina') || n.includes('máquina') || n.includes('apoiad'))) {
-    return 'machine_row';
-  }
-  if (n.includes('elevação lateral') || n.includes('elevacao lateral') || n.includes('desenvolvimento') || n.includes('ombro')) {
-    return 'lateral_raise';
-  }
-  if (n.includes('martelo')) {
-    return 'hammer_curl';
-  }
-  if (n.includes('rosca') || n.includes('biceps') || n.includes('bíceps')) {
-    return 'bicep_curl';
-  }
-  if (n.includes('triceps') || n.includes('tríceps')) {
-    if (n.includes('corda')) return 'tricep_rope';
-    return 'tricep_pushdown';
-  }
-  if (n.includes('leg press') && (n.includes('45') || n.includes('inclinado'))) {
-    return 'leg_press_45';
-  }
-  if (n.includes('leg press')) {
-    return 'leg_press_horizontal';
-  }
-  if (n.includes('agachamento') || n.includes('squat') || n.includes('hack') || n.includes('afundo') || n.includes('bulgaro') || n.includes('búlgaro')) {
-    return 'squat';
-  }
-  if (n.includes('rdl') || n.includes('stiff') || n.includes('levantamento terra') || n.includes('terra')) {
-    return 'romanian_deadlift';
-  }
-  if (n.includes('extensora') || n.includes('extensao')) {
-    return 'leg_extension';
-  }
-  if (n.includes('mesa flexora') || (n.includes('flexora') && n.includes('deitad'))) {
-    return 'lying_leg_curl';
-  }
-  if (n.includes('flexora')) {
-    return 'seated_leg_curl';
-  }
-  if (n.includes('panturrilha') && (n.includes('sentad') || n.includes('soleo') || n.includes('sóleo'))) {
-    return 'seated_calf_raise';
-  }
-  if (n.includes('panturrilha') || n.includes('gemeos') || n.includes('gêmeos')) {
-    return 'standing_calf_raise';
-  }
-  if (n.includes('abdom') || n.includes('crunch') || n.includes('core') || n.includes('infra')) {
-    return 'cable_crunch';
   }
 
   // 3. Fallback inteligente por grupo muscular

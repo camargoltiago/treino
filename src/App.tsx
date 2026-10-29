@@ -177,6 +177,7 @@ export const App: React.FC = () => {
 
   // Modais
   const [guideExerciseId, setGuideExerciseId] = useState<string | null>(null);
+  const [guideExerciseName, setGuideExerciseName] = useState<string | null>(null);
   const [showFinishModal, setShowFinishModal] = useState<boolean>(false);
 
   // PWA beforeinstallprompt
@@ -714,7 +715,10 @@ export const App: React.FC = () => {
               onDeleteSet={handleDeleteSet}
               onToggleExerciseComplete={handleToggleExerciseComplete}
               onUpdateNotes={handleUpdateNotes}
-              onOpenGuide={(id) => setGuideExerciseId(id)}
+              onOpenGuide={(id, name) => {
+                setGuideExerciseId(id);
+                setGuideExerciseName(name || null);
+              }}
               onFinishWorkout={() => setShowFinishModal(true)}
               onCancelWorkout={handleCancelWorkout}
               onBack={() => setCurrentTab('today')}
@@ -725,7 +729,10 @@ export const App: React.FC = () => {
               activeSession={activeSession}
               history={history}
               onStartWorkout={handleStartWorkout}
-              onOpenGuide={(id) => setGuideExerciseId(id)}
+              onOpenGuide={(id, name) => {
+                setGuideExerciseId(id);
+                setGuideExerciseName(name || null);
+              }}
               onSaveWorkout={handleSaveWorkout}
               onDeleteWorkout={handleDeleteWorkout}
               onAddWorkout={handleAddWorkout}
@@ -790,8 +797,13 @@ export const App: React.FC = () => {
       {/* Modal Técnico do Exercício ("Como Fazer?") */}
       <ExerciseGuideModal
         exerciseId={guideExerciseId}
+        exerciseName={guideExerciseName}
+        activeSession={activeSession}
         workouts={workouts}
-        onClose={() => setGuideExerciseId(null)}
+        onClose={() => {
+          setGuideExerciseId(null);
+          setGuideExerciseName(null);
+        }}
       />
 
       {/* Modal de Finalização de Treino */}

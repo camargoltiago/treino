@@ -8,7 +8,7 @@ interface WorkoutListViewProps {
   activeSession: WorkoutSession | null;
   history: WorkoutSession[];
   onStartWorkout: (id: WorkoutId) => void;
-  onOpenGuide: (exerciseId: string) => void;
+  onOpenGuide: (exerciseId: string, exerciseName?: string) => void;
   onSaveWorkout: (workout: WorkoutPlan) => void;
   onDeleteWorkout: (id: string) => void;
   onAddWorkout: (workout: WorkoutPlan) => void;
@@ -220,7 +220,7 @@ export const WorkoutListView: React.FC<WorkoutListViewProps> = ({
                           </p>
                         </div>
                         <button
-                          onClick={() => onOpenGuide(ex.id)}
+                          onClick={() => onOpenGuide(ex.id, ex.name)}
                           className="p-1.5 text-cyan-400 hover:text-white rounded-lg bg-dark-card border border-dark-border shrink-0 ml-2"
                           title="Como fazer?"
                         >

@@ -13,7 +13,7 @@ interface ActiveWorkoutViewProps {
   onDeleteSet: (exerciseId: string, setIndex: number) => void;
   onToggleExerciseComplete: (exerciseId: string) => void;
   onUpdateNotes: (exerciseId: string, notes: string) => void;
-  onOpenGuide: (exerciseId: string) => void;
+  onOpenGuide: (exerciseId: string, exerciseName?: string) => void;
   onFinishWorkout: () => void;
   onCancelWorkout: () => void;
   onBack: () => void;
@@ -138,7 +138,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                   </div>
 
                   <button
-                    onClick={() => onOpenGuide(ex.id)}
+                    onClick={() => onOpenGuide(ex.id, ex.name)}
                     className="h-8 px-2.5 bg-dark-surface hover:bg-dark-cardHover text-cyan-400 border border-dark-border rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 active:scale-95"
                   >
                     <Info className="w-3.5 h-3.5" />

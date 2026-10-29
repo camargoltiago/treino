@@ -1,17 +1,130 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { X, ShieldAlert, CheckCircle2, Zap, Wind, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { EXERCISE_GUIDES } from '../data/guides';
 import { WORKOUTS_DATA } from '../data/workouts';
-import { ExerciseDefinition, WorkoutPlan } from '../types';
+import { ExerciseDefinition, ExerciseGuide, WorkoutPlan, WorkoutSession } from '../types';
 import { ExerciseStickman } from './ExerciseStickman';
 
 interface ExerciseGuideModalProps {
-  exerciseId: string | null;
+  exerciseId?: string | null;
+  exerciseName?: string | null;
+  activeSession?: WorkoutSession | null;
   workouts?: Record<string, WorkoutPlan>;
   onClose: () => void;
 }
 
-export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({ exerciseId, workouts, onClose }) => {
+// Busca inteligente do guia técnico oficial pelo nome do exercício
+function findExerciseGuide(exerciseName?: string | null, exerciseId?: string | null): ExerciseGuide | null {
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+
+  const target = exerciseName ? norm(exerciseName) : '';
+
+  if (target) {
+    // 1. Busca direta por similaridade de título
+    for (const guide of Object.values(EXERCISE_GUIDES)) {
+      const gTitle = norm(guide.title);
+      if (gTitle === target || gTitle.includes(target) || target.includes(gTitle)) {
+        return guide;
+      }
+    }
+
+    // 2. Busca por padrões de exercício
+    if (target.includes('leg press') && (target.includes('45') || target.includes('inclinad'))) {
+      return EXERCISE_GUIDES['B2'];
+    }
+    if (target.includes('leg press')) {
+      return EXERCISE_GUIDES['C1'];
+    }
+    if (target.includes('inclinad') && (target.includes('supino') || target.includes('halter'))) {
+      return EXERCISE_GUIDES['A1'];
+    }
+    if (target.includes('supino') && (target.includes('maquina') || target.includes('articulad'))) {
+      return EXERCISE_GUIDES['C3'];
+    }
+    if (target.includes('supino reto') || target.includes('supino')) {
+      return EXERCISE_GUIDES['A3'];
+    }
+    if (target.includes('puxada') || target.includes('pulldown')) {
+      return EXERCISE_GUIDES['A2'];
+    }
+    if (target.includes('remada') && (target.includes('sentad') || target.includes('cabo') || target.includes('baixa'))) {
+      return EXERCISE_GUIDES['A4'];
+    }
+    if (target.includes('remada')) {
+      return EXERCISE_GUIDES['C4'];
+    }
+    if (target.includes('elevacao lateral') && (target.includes('polia') || target.includes('cabo'))) {
+      return EXERCISE_GUIDES['C5'];
+    }
+    if (target.includes('elevacao lateral') || target.includes('desenvolvimento')) {
+      return EXERCISE_GUIDES['A5'];
+    }
+    if (target.includes('agachamento') || target.includes('squat') || target.includes('hack')) {
+      return EXERCISE_GUIDES['B1'];
+    }
+    if (target.includes('rdl') || target.includes('stiff') || target.includes('levantamento terra') || target.includes('terra')) {
+      return EXERCISE_GUIDES['B3'];
+    }
+    if (target.includes('extensora')) {
+      return EXERCISE_GUIDES['B4'];
+    }
+    if (target.includes('mesa flexora') || (target.includes('flexora') && target.includes('deitad'))) {
+      return EXERCISE_GUIDES['B5'];
+    }
+    if (target.includes('flexora')) {
+      return EXERCISE_GUIDES['C2'];
+    }
+    if (target.includes('panturrilha') && (target.includes('sentad') || target.includes('soleo'))) {
+      return EXERCISE_GUIDES['C8'];
+    }
+    if (target.includes('panturrilha')) {
+      return EXERCISE_GUIDES['B6'];
+    }
+    if (target.includes('martelo')) {
+      return EXERCISE_GUIDES['C6'];
+    }
+    if (target.includes('rosca') || target.includes('biceps')) {
+      return EXERCISE_GUIDES['A6'];
+    }
+    if (target.includes('triceps') && target.includes('corda')) {
+      return EXERCISE_GUIDES['C7'];
+    }
+    if (target.includes('triceps')) {
+      return EXERCISE_GUIDES['A7'];
+    }
+    if (target.includes('abdom') || target.includes('crunch')) {
+      return EXERCISE_GUIDES['B7'];
+    }
+  }
+
+  // 3. Fallback apenas se o ID existir e o nome for compatível ou omitido
+  if (exerciseId && EXERCISE_GUIDES[exerciseId]) {
+    const candidate = EXERCISE_GUIDES[exerciseId];
+    if (!target) return candidate;
+
+    // Se o nome do exercício não tiver nada a ver com o ID cadastrado, não usa ID falso
+    const cTitle = norm(candidate.title);
+    const words = target.split(/\s+/).filter(w => w.length >= 4);
+    if (words.some(w => cTitle.includes(w))) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({
+  exerciseId,
+  exerciseName,
+  activeSession,
+  workouts,
+  onClose
+}) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -20,34 +133,65 @@ export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({ exercise
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  if (!exerciseId) return null;
+  const resolved = useMemo(() => {
+    if (!exerciseId && !exerciseName) return null;
 
-  let exDef: ExerciseDefinition | undefined;
-  if (workouts) {
-    Object.values(workouts).forEach(plan => {
-      const found = plan.exercises.find(e => e.id === exerciseId);
-      if (found) exDef = found;
-    });
-  }
+    let exDef: ExerciseDefinition | undefined;
 
-  if (!exDef) {
-    Object.values(WORKOUTS_DATA).forEach(plan => {
-      const found = plan.exercises.find(e => e.id === exerciseId);
-      if (found) exDef = found;
-    });
-  }
+    // 1. Procurar no treino atualmente em andamento da sessão
+    if (activeSession) {
+      const activePlan = workouts?.[activeSession.workoutId] || WORKOUTS_DATA[activeSession.workoutId];
+      if (activePlan) {
+        exDef = activePlan.exercises.find(
+          e => (exerciseId && e.id === exerciseId) || (exerciseName && e.name.toLowerCase() === exerciseName.toLowerCase())
+        );
+      }
+    }
 
-  const guide = EXERCISE_GUIDES[exerciseId] || (exDef ? {
-    title: exDef.name,
-    targetMuscles: exDef.muscles || `Foco: ${exDef.muscleGroup}`,
-    setup: 'Ajuste a carga e a postura inicial mantendo a coluna alinhada e as articulações estabilizadas.',
-    execution: '1. Execute o movimento de forma controlada e sem trancos.\n2. Conduza a fase excêntrica sentindo o músculo alvo alongar.\n3. Complete a contração sem perder a postura biomecânica.',
-    breathing: 'Expire durante o esforço/contração; inspire de forma controlada no retorno.',
-    mistakes: 'Usar embalo excessivo; encurtar a amplitude útil; perder a estabilidade articular.',
-    safety: 'Ajuste a carga para realizar as repetições com boa técnica (mantenha 1 a 2 repetições em reserva).'
-  } : null);
+    // 2. Procurar em todos os treinos do usuário
+    if (!exDef && workouts) {
+      for (const plan of Object.values(workouts)) {
+        const found = plan.exercises.find(
+          e => (exerciseId && e.id === exerciseId) || (exerciseName && e.name.toLowerCase() === exerciseName.toLowerCase())
+        );
+        if (found) {
+          exDef = found;
+          break;
+        }
+      }
+    }
 
-  if (!guide) return null;
+    // 3. Procurar nos dados estáticos
+    if (!exDef) {
+      for (const plan of Object.values(WORKOUTS_DATA)) {
+        const found = plan.exercises.find(
+          e => (exerciseId && e.id === exerciseId) || (exerciseName && e.name.toLowerCase() === exerciseName.toLowerCase())
+        );
+        if (found) {
+          exDef = found;
+          break;
+        }
+      }
+    }
+
+    const finalName = exDef?.name || exerciseName || (exerciseId && EXERCISE_GUIDES[exerciseId]?.title) || 'Exercício';
+    const foundGuide = findExerciseGuide(finalName, exerciseId);
+
+    const guide: ExerciseGuide = foundGuide || {
+      title: finalName,
+      targetMuscles: exDef?.muscles || (exDef?.muscleGroup ? `Foco: ${exDef.muscleGroup}` : 'Musculatura Alvo'),
+      setup: 'Ajuste a carga e a postura inicial mantendo a coluna alinhada e as articulações estabilizadas.',
+      execution: '1. Execute o movimento de forma controlada e sem trancos.\n2. Conduza a fase excêntrica sentindo o músculo alvo alongar.\n3. Complete a contração sem perder a postura biomecânica.',
+      breathing: 'Expire durante o esforço/contração; inspire de forma controlada no retorno.',
+      mistakes: 'Usar embalo excessivo; encurtar a amplitude útil; perder a estabilidade articular.',
+      safety: 'Ajuste a carga para realizar as repetições com boa técnica (mantenha 1 a 2 repetições em reserva).'
+    };
+
+    return { exDef, guide, finalName };
+  }, [exerciseId, exerciseName, activeSession, workouts]);
+
+  if (!resolved) return null;
+  const { exDef, guide, finalName } = resolved;
 
   return (
     <div
@@ -65,13 +209,13 @@ export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({ exercise
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-mint-500/20 text-mint-400 border border-mint-500/30">
-                {exerciseId}
+                {exDef?.id || exerciseId || 'EX'}
               </span>
               {exDef?.notes && (
                 <span className="text-xs text-slate-400 font-medium">{exDef.notes}</span>
               )}
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-white">{guide.title}</h2>
+            <h2 className="text-lg sm:text-xl font-black text-white">{finalName}</h2>
             <p className="text-xs text-cyan-400 font-semibold mt-0.5">{guide.targetMuscles}</p>
           </div>
           <button
@@ -88,10 +232,10 @@ export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({ exercise
           
           {/* Animação Stickman Biomecânica 2D */}
           <ExerciseStickman
-            exerciseId={exerciseId}
-            exerciseName={exDef?.name || guide.title}
+            exerciseId={exDef?.id || exerciseId || undefined}
+            exerciseName={finalName}
             muscleGroup={exDef?.muscleGroup}
-            title={guide.title}
+            title={finalName}
           />
 
           {/* Alerta de Segurança e Dor Aguda */}
