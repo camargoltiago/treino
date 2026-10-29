@@ -790,6 +790,7 @@ export const App: React.FC = () => {
       {/* Modal Técnico do Exercício ("Como Fazer?") */}
       <ExerciseGuideModal
         exerciseId={guideExerciseId}
+        workouts={workouts}
         onClose={() => setGuideExerciseId(null)}
       />
 

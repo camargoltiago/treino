@@ -2,14 +2,16 @@ import React, { useEffect } from 'react';
 import { X, ShieldAlert, CheckCircle2, Zap, Wind, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { EXERCISE_GUIDES } from '../data/guides';
 import { WORKOUTS_DATA } from '../data/workouts';
-import { ExerciseDefinition } from '../types';
+import { ExerciseDefinition, WorkoutPlan } from '../types';
+import { ExerciseStickman } from './ExerciseStickman';
 
 interface ExerciseGuideModalProps {
   exerciseId: string | null;
+  workouts?: Record<string, WorkoutPlan>;
   onClose: () => void;
 }
 
-export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({ exerciseId, onClose }) => {
+export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({ exerciseId, workouts, onClose }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -20,14 +22,32 @@ export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({ exercise
 
   if (!exerciseId) return null;
 
-  const guide = EXERCISE_GUIDES[exerciseId];
-  if (!guide) return null;
-
   let exDef: ExerciseDefinition | undefined;
-  Object.values(WORKOUTS_DATA).forEach(plan => {
-    const found = plan.exercises.find(e => e.id === exerciseId);
-    if (found) exDef = found;
-  });
+  if (workouts) {
+    Object.values(workouts).forEach(plan => {
+      const found = plan.exercises.find(e => e.id === exerciseId);
+      if (found) exDef = found;
+    });
+  }
+
+  if (!exDef) {
+    Object.values(WORKOUTS_DATA).forEach(plan => {
+      const found = plan.exercises.find(e => e.id === exerciseId);
+      if (found) exDef = found;
+    });
+  }
+
+  const guide = EXERCISE_GUIDES[exerciseId] || (exDef ? {
+    title: exDef.name,
+    targetMuscles: exDef.muscles || `Foco: ${exDef.muscleGroup}`,
+    setup: 'Ajuste a carga e a postura inicial mantendo a coluna alinhada e as articulações estabilizadas.',
+    execution: '1. Execute o movimento de forma controlada e sem trancos.\n2. Conduza a fase excêntrica sentindo o músculo alvo alongar.\n3. Complete a contração sem perder a postura biomecânica.',
+    breathing: 'Expire durante o esforço/contração; inspire de forma controlada no retorno.',
+    mistakes: 'Usar embalo excessivo; encurtar a amplitude útil; perder a estabilidade articular.',
+    safety: 'Ajuste a carga para realizar as repetições com boa técnica (mantenha 1 a 2 repetições em reserva).'
+  } : null);
+
+  if (!guide) return null;
 
   return (
     <div
@@ -38,16 +58,18 @@ export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({ exercise
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-dark-surface border border-dark-borderLight rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl relative my-auto animate-in zoom-in-95 duration-150">
+      <div className="bg-dark-surface border border-dark-borderLight rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-2xl relative my-auto animate-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="p-5 border-b border-dark-border flex items-start justify-between gap-4">
+        <div className="p-4 sm:p-5 border-b border-dark-border flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-mint-500/20 text-mint-400 border border-mint-500/30">
                 {exerciseId}
               </span>
-              <span className="text-xs text-slate-400 font-medium">{exDef?.notes}</span>
+              {exDef?.notes && (
+                <span className="text-xs text-slate-400 font-medium">{exDef.notes}</span>
+              )}
             </div>
             <h2 className="text-lg sm:text-xl font-black text-white">{guide.title}</h2>
             <p className="text-xs text-cyan-400 font-semibold mt-0.5">{guide.targetMuscles}</p>
@@ -62,8 +84,16 @@ export const ExerciseGuideModal: React.FC<ExerciseGuideModalProps> = ({ exercise
         </div>
 
         {/* Conteúdo com Scroll */}
-        <div className="p-5 overflow-y-auto space-y-4 custom-scrollbar text-sm text-slate-300">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 custom-scrollbar text-sm text-slate-300">
           
+          {/* Animação Stickman Biomecânica 2D */}
+          <ExerciseStickman
+            exerciseId={exerciseId}
+            exerciseName={exDef?.name || guide.title}
+            muscleGroup={exDef?.muscleGroup}
+            title={guide.title}
+          />
+
           {/* Alerta de Segurança e Dor Aguda */}
           <div className="bg-amber-950/40 border border-amber-500/30 rounded-2xl p-3.5 text-xs text-amber-200 flex items-start gap-3">
             <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
