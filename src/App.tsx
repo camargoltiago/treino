@@ -22,6 +22,8 @@ import { MuscleRecoveryView } from './views/MuscleRecoveryView';
 import { ProgressView } from './views/ProgressView';
 import { HistoryBackupView } from './views/HistoryBackupView';
 import { NutritionView } from './views/NutritionView';
+import { WorkoutAiChatView } from './views/WorkoutAiChatView';
+
 
 export const App: React.FC = () => {
   // Estado carregado do localStorage
@@ -50,11 +52,25 @@ export const App: React.FC = () => {
   const [aiCoachTab, setAiCoachTab] = useState<'assessment' | 'workout_creator'>('assessment');
   const [aiCoachTargetWorkoutId, setAiCoachTargetWorkoutId] = useState<string | null>(null);
 
+  // Tela Exclusiva de Chat com Treinador IA
+  const [isAiWorkoutChatOpen, setIsAiWorkoutChatOpen] = useState<boolean>(false);
+  const [aiWorkoutChatTargetId, setAiWorkoutChatTargetId] = useState<string | null>(null);
+
+  const handleOpenAiWorkoutChat = (workoutId?: string) => {
+    setAiWorkoutChatTargetId(workoutId || null);
+    setIsAiWorkoutChatOpen(true);
+  };
+
   const handleOpenAiCoach = (tab: 'assessment' | 'workout_creator' = 'assessment', workoutId?: string) => {
-    setAiCoachTab(tab);
-    setAiCoachTargetWorkoutId(workoutId || null);
+    if (tab === 'workout_creator') {
+      handleOpenAiWorkoutChat(workoutId);
+      return;
+    }
+    setAiCoachTab('assessment');
+    setAiCoachTargetWorkoutId(null);
     setIsAiCoachOpen(true);
   };
+
 
   const handleSaveAssessment = (newAssessment: WeeklyAssessment | null) => {
     setCoachAssessment(newAssessment);
@@ -837,7 +853,31 @@ export const App: React.FC = () => {
         onApplyWorkouts={handleApplyWorkoutsFromAi}
         savedAssessment={coachAssessment}
         onSaveAssessment={handleSaveAssessment}
+        onOpenWorkoutChat={() => handleOpenAiWorkoutChat()}
       />
+
+      {/* Tela Exclusiva: Chat Interativo com Treinador IA para Montar e Ajustar Treinos */}
+      {isAiWorkoutChatOpen && (
+        <WorkoutAiChatView
+          onBack={() => {
+            setIsAiWorkoutChatOpen(false);
+            setAiWorkoutChatTargetId(null);
+          }}
+          workouts={workouts}
+          initialTargetWorkoutId={aiWorkoutChatTargetId}
+          aiSettings={aiSettings}
+          onSaveAiSettings={(newAi) => {
+            setAiSettings(newAi);
+            StorageService.saveAiSettings(newAi);
+          }}
+          onApplyWorkouts={handleApplyWorkoutsFromAi}
+          onOpenGuide={(id, name) => {
+            setGuideExerciseId(id);
+            setGuideExerciseName(name || null);
+          }}
+        />
+      )}
+
 
       {/* Modal Global de Configurações de IA (Chave da API & Modelo) e Metas */}
       <NutritionSettingsModal

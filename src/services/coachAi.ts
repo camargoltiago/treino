@@ -43,6 +43,56 @@ function extractJsonFromResponse(rawText: string): any {
 }
 
 /**
+ * Normaliza treinos retornados pela IA
+ */
+export function normalizeRawWorkouts(rawWorkouts: any[]): AiWorkoutPlanItem[] {
+  const muscleGroupsAllowed = ['chest', 'back', 'shoulders', 'arms', 'quads', 'hamstrings', 'calves', 'abs'];
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  return rawWorkouts.map((w: any, wIdx: number) => {
+    const code = String(w.code || letters[wIdx % letters.length] || `T${wIdx + 1}`).trim().toUpperCase();
+    const exercises = Array.isArray(w.exercises)
+      ? w.exercises.map((ex: any) => {
+          let muscleGroup = (String(ex.muscleGroup || 'chest').toLowerCase()) as any;
+          if (!muscleGroupsAllowed.includes(muscleGroup)) {
+            muscleGroup = 'chest';
+          }
+          return {
+            name: String(ex.name || 'Exercício').trim(),
+            muscleGroup,
+            sets: Math.max(1, Math.min(10, Math.round(Number(ex.sets) || 3))),
+            reps: String(ex.reps || '8–12').trim(),
+            restSeconds: Math.max(0, Math.round(Number(ex.restSeconds) || 90)),
+            notes: String(ex.notes || '').trim(),
+            targetLoadKg: ex.targetLoadKg !== undefined ? Math.round(Number(ex.targetLoadKg)) : undefined,
+            isDumbbell: !!ex.isDumbbell
+          };
+        })
+      : [];
+
+    return {
+      id: w.id ? String(w.id) : undefined,
+      code,
+      title: String(w.title || `Treino ${code}`).trim(),
+      shortTitle: String(w.shortTitle || `Treino ${code}`).trim(),
+      focus: String(w.focus || 'Hipertrofia e força').trim(),
+      dayLabel: String(w.dayLabel || 'Personalizado').trim(),
+      estimatedMinutes: Math.max(20, Math.round(Number(w.estimatedMinutes) || 50)),
+      exercises: exercises.length > 0 ? exercises : [
+        {
+          name: 'Exercício Base',
+          muscleGroup: 'chest',
+          sets: 3,
+          reps: '8–12',
+          restSeconds: 90,
+          notes: 'Execução controlada'
+        }
+      ]
+    };
+  });
+}
+
+
+/**
  * Calcula estatísticas fáticas dos últimos N dias (padrão 7 dias)
  */
 export function calculateWeekFactualStats(
@@ -477,7 +527,6 @@ Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
 
     const parsed = extractJsonFromResponse(candidate.content.parts[0].text);
 
-    // Suportar tanto "workouts" (array) quanto "workout" (único objeto legado)
     let rawWorkouts: any[] = [];
     if (Array.isArray(parsed.workouts) && parsed.workouts.length > 0) {
       rawWorkouts = parsed.workouts;
@@ -489,53 +538,184 @@ Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
       throw new Error('A IA não gerou nenhum treino válido. Tente novamente.');
     }
 
-    const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-    const normalizedWorkouts: AiWorkoutPlanItem[] = rawWorkouts.map((w: any, wIdx: number) => {
-      const code = String(w.code || letters[wIdx % letters.length] || `T${wIdx + 1}`).trim().toUpperCase();
-      const exercises = Array.isArray(w.exercises)
-        ? w.exercises.map((ex: any) => {
-            let muscleGroup = (String(ex.muscleGroup || 'chest').toLowerCase()) as any;
-            if (!muscleGroupsAllowed.includes(muscleGroup)) {
-              muscleGroup = 'chest';
-            }
-            return {
-              name: String(ex.name || 'Exercício').trim(),
-              muscleGroup,
-              sets: Math.max(1, Math.min(10, Math.round(Number(ex.sets) || 3))),
-              reps: String(ex.reps || '8–12').trim(),
-              restSeconds: Math.max(0, Math.round(Number(ex.restSeconds) || 90)),
-              notes: String(ex.notes || '').trim(),
-              targetLoadKg: ex.targetLoadKg !== undefined ? Math.round(Number(ex.targetLoadKg)) : undefined,
-              isDumbbell: !!ex.isDumbbell
-            };
-          })
-        : [];
-
-      return {
-        id: w.id ? String(w.id) : undefined,
-        code,
-        title: String(w.title || `Treino ${code}`).trim(),
-        shortTitle: String(w.shortTitle || `Treino ${code}`).trim(),
-        focus: String(w.focus || 'Hipertrofia e força').trim(),
-        dayLabel: String(w.dayLabel || 'Personalizado').trim(),
-        estimatedMinutes: Math.max(20, Math.round(Number(w.estimatedMinutes) || 50)),
-        exercises: exercises.length > 0 ? exercises : [
-          {
-            name: 'Exercício Base',
-            muscleGroup: 'chest',
-            sets: 3,
-            reps: '8–12',
-            restSeconds: 90,
-            notes: 'Execução controlada'
-          }
-        ]
-      };
-    });
+    const normalizedWorkouts = normalizeRawWorkouts(rawWorkouts);
 
     return {
       message: String(parsed.message || 'Treinos configurados com sucesso pelo Treinador IA!'),
       isFullRoutine: normalizedWorkouts.length > 1 || !!parsed.isFullRoutine,
       workouts: normalizedWorkouts
     };
+  },
+
+  /**
+   * Chat Interativo Contínuo com o Treinador IA para Montar e Ajustar Treinos Dinamicamente
+   */
+  async chatWorkoutCoach(params: {
+    userMessage: string;
+    chatHistory: { role: 'user' | 'assistant'; content: string }[];
+    currentWorkouts?: AiWorkoutPlanItem[] | null;
+    targetWorkout?: WorkoutPlan | null;
+    existingWorkouts?: Record<string, WorkoutPlan>;
+    apiKey: string;
+    model?: string;
+  }): Promise<{
+    replyText: string;
+    isFullRoutine: boolean;
+    workouts: AiWorkoutPlanItem[];
+  }> {
+    const {
+      userMessage,
+      chatHistory,
+      currentWorkouts,
+      targetWorkout,
+      existingWorkouts = {},
+      apiKey,
+      model = DEFAULT_GEMINI_MODEL
+    } = params;
+
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('API Key do Gemini não configurada. Configure sua chave nas configurações.');
+    }
+
+    if (!userMessage || userMessage.trim() === '') {
+      throw new Error('Digite ou fale sua mensagem para o Treinador IA.');
+    }
+
+    // Contexto de treinos atuais em discussão
+    let contextWorkoutsDesc = '';
+    if (currentWorkouts && currentWorkouts.length > 0) {
+      contextWorkoutsDesc = `\nTREINO(S) ATUALMENTE MONTADO(S) NESTA CONVERSA:\n` +
+        currentWorkouts.map(w => {
+          const exs = w.exercises.map(e => `  - ${e.name} (${e.sets} séries x ${e.reps} reps, descanso: ${e.restSeconds}s, grupo: ${e.muscleGroup}${e.notes ? ', obs: ' + e.notes : ''})`).join('\n');
+          return `[Treino ${w.code} - ${w.title} | Foco: ${w.focus} | ~${w.estimatedMinutes}min]\n${exs}`;
+        }).join('\n\n');
+    } else if (targetWorkout) {
+      const exs = targetWorkout.exercises.map(e => `  - ${e.name} (${e.sets} séries x ${e.reps} reps, descanso: ${e.restSeconds}s, grupo: ${e.muscleGroup}${e.notes ? ', obs: ' + e.notes : ''})`).join('\n');
+      contextWorkoutsDesc = `\nTREINO ATUAL QUE O USUÁRIO DESEJA AJUSTAR:\n[Treino ${targetWorkout.code} - ${targetWorkout.title} | Foco: ${targetWorkout.focus}]\n${exs}`;
+    }
+
+    // Treinos que o usuário já tem salvos no app
+    const existingTitles = Object.values(existingWorkouts).map(w => `${w.code}: ${w.title}`).join(', ') || 'Nenhum';
+
+    // Histórico de mensagens anteriores (últimas 8 para manter foco e agilidade)
+    const recentHistory = chatHistory.slice(-8);
+    let historyFormatted = '';
+    if (recentHistory.length > 0) {
+      historyFormatted = `\nHISTÓRICO RECENTE DA CONVERSA:\n` +
+        recentHistory.map(m => `${m.role === 'user' ? 'USUÁRIO' : 'TREINADOR IA'}: ${m.content}`).join('\n');
+    }
+
+    const systemPrompt = `Você é o Treinador Mestre de musculação e periodização de hipertrofia do app MuscleTrack.
+Você está conversando diretamente com o usuário em um chat interativo para montar ou refinar fichas de treino.
+
+GRUPOS MUSCULARES VÁLIDOS (muscleGroup DEVE ser estritamente um destes):
+- "chest" (Peitoral)
+- "back" (Costas / Dorsais / Trapézio)
+- "shoulders" (Deltoides)
+- "arms" (Bíceps / Tríceps / Antebraço)
+- "quads" (Quadríceps)
+- "hamstrings" (Posteriores de coxa / Glúteos)
+- "calves" (Panturrilhas)
+- "abs" (Abdômen / Core)
+
+DIRETRIZES TÉCNICAS E DE DIÁLOGO:
+1. Responda em tom profissional, motivador, empático e focado em hipertrofia e biomecânica segura.
+2. Cada treino deve conter de 4 a 7 exercícios equilibrados (volume médio de 14 a 22 séries totais por treino).
+3. Ao ajustar treinos (ex: "troque supino inclinado por halteres", "adicione panturrilha", "remova 1 de tríceps", "diminua o tempo para 40min", "aumente o descanso para 2 minutos"), mantenha toda a estrutura anterior e altere apenas o solicitado pelo usuário.
+4. Se o usuário estiver pedindo uma nova rotina completa (ex: ABC, ABCD, Push/Pull/Legs, Upper/Lower), estruture todos os dias no array "workouts".
+5. Se for um ajuste em 1 treino específico, preserve o código e estrutura.
+6. IMPORTANTE: Sempre retorne o array "workouts" COMPLETO e ATUALIZADO com todos os exercícios da rotina/treino vigente.
+7. Em "replyText", dê uma resposta conversacional amigável, clara e concisa (1 a 3 parágrafos curtos) explicando o que alterou, a lógica do ajuste e dicas práticas de treino.
+
+Treinos salvos no app do usuário: ${existingTitles}
+${contextWorkoutsDesc}
+${historyFormatted}
+
+NOVA MENSAGEM DO USUÁRIO:
+"${userMessage.trim()}"
+
+RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO com a seguinte estrutura:
+{
+  "replyText": "Explicação amigável em linguagem natural sobre o treino ou ajuste realizado.",
+  "isFullRoutine": true,
+  "workouts": [
+    {
+      "code": "A",
+      "title": "Treino A — Peito e Tríceps",
+      "shortTitle": "Peito & Tríceps",
+      "focus": "Foco em peitoral e deltoide anterior com ênfase em sobrecarga progressiva",
+      "dayLabel": "Segunda-feira",
+      "estimatedMinutes": 50,
+      "exercises": [
+        {
+          "name": "Supino Reto com Barra",
+          "muscleGroup": "chest",
+          "sets": 4,
+          "reps": "8–10",
+          "restSeconds": 90,
+          "notes": "Cadência controlada na descida",
+          "targetLoadKg": 25,
+          "isDumbbell": false
+        }
+      ]
+    }
+  ]
+}`;
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.trim())}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: systemPrompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.4
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      let msg = `Erro ${response.status}: Falha ao conversar com Treinador IA.`;
+      try {
+        const parsedErr = JSON.parse(errText);
+        if (parsedErr.error && parsedErr.error.message) {
+          msg = `Erro Gemini: ${parsedErr.error.message}`;
+        }
+      } catch (e) {}
+      throw new Error(msg);
+    }
+
+    const data = await response.json();
+    const candidate = data.candidates?.[0];
+    if (!candidate || !candidate.content?.parts?.[0]?.text) {
+      throw new Error('O Treinador IA não conseguiu processar sua mensagem. Tente novamente.');
+    }
+
+    const parsed = extractJsonFromResponse(candidate.content.parts[0].text);
+
+    let rawWorkouts: any[] = [];
+    if (Array.isArray(parsed.workouts) && parsed.workouts.length > 0) {
+      rawWorkouts = parsed.workouts;
+    } else if (parsed.workout && typeof parsed.workout === 'object') {
+      rawWorkouts = [parsed.workout];
+    } else if (currentWorkouts && currentWorkouts.length > 0) {
+      rawWorkouts = currentWorkouts;
+    }
+
+    if (rawWorkouts.length === 0) {
+      throw new Error('A IA não gerou ou não encontrou nenhum treino na conversa. Tente reformular seu pedido.');
+    }
+
+    const normalizedWorkouts = normalizeRawWorkouts(rawWorkouts);
+
+    return {
+      replyText: String(parsed.replyText || parsed.message || 'Treino atualizado conforme conversamos!'),
+      isFullRoutine: normalizedWorkouts.length > 1 || !!parsed.isFullRoutine,
+      workouts: normalizedWorkouts
+    };
   }
 };
+

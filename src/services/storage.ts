@@ -1,4 +1,4 @@
-import { WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings, DeepSeekSettings, WeeklyAssessment } from '../types';
+import { WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings, DeepSeekSettings, WeeklyAssessment, WorkoutCoachChatMessage } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 
 export const STORAGE_KEY = 'meu_treino_hibrido_v2';
@@ -10,6 +10,8 @@ export const GEMINI_SETTINGS_KEY = 'meu_treino_gemini_settings';
 export const DEEPSEEK_SETTINGS_KEY = 'meu_treino_deepseek_settings';
 export const WATER_STORAGE_KEY = 'meu_treino_water_v2';
 export const COACH_ASSESSMENT_KEY = 'meu_treino_coach_assessment_v1';
+export const WORKOUT_CHAT_HISTORY_KEY = 'meu_treino_workout_chat_history_v1';
+
 
 export const DEFAULT_NUTRITION_GOALS: NutritionGoals = {
   calories: 2200,
@@ -321,11 +323,36 @@ export const StorageService = {
     URL.revokeObjectURL(url);
   },
 
+  loadWorkoutChatHistory(): WorkoutCoachChatMessage[] {
+    try {
+      const raw = localStorage.getItem(WORKOUT_CHAT_HISTORY_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  },
+
+  saveWorkoutChatHistory(messages: WorkoutCoachChatMessage[]): void {
+    try {
+      localStorage.setItem(WORKOUT_CHAT_HISTORY_KEY, JSON.stringify(messages));
+    } catch (e) {}
+  },
+
+  clearWorkoutChatHistory(): void {
+    try {
+      localStorage.removeItem(WORKOUT_CHAT_HISTORY_KEY);
+    } catch (e) {}
+  },
+
   clearAll() {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(WORKOUTS_STORAGE_KEY);
     localStorage.removeItem('meu_treino_hibrido_v1');
     localStorage.removeItem(NUTRITION_STORAGE_KEY);
     localStorage.removeItem(WATER_STORAGE_KEY);
+    localStorage.removeItem(WORKOUT_CHAT_HISTORY_KEY);
   }
+
 };

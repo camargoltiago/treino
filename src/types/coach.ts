@@ -69,3 +69,13 @@ export interface AiWorkoutGenerationResult {
   isFullRoutine: boolean;
   workouts: AiWorkoutPlanItem[];
 }
+
+export interface WorkoutCoachChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  workouts?: AiWorkoutPlanItem[];
+  isFullRoutine?: boolean;
+}
+

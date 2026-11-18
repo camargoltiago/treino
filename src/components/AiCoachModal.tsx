@@ -50,6 +50,7 @@ interface AiCoachModalProps {
   onApplyWorkouts: (workouts: WorkoutPlan[], mode: 'replace_all' | 'append' | 'update') => void;
   savedAssessment: WeeklyAssessment | null;
   onSaveAssessment: (assessment: WeeklyAssessment | null) => void;
+  onOpenWorkoutChat?: () => void;
 }
 
 export const AiCoachModal: React.FC<AiCoachModalProps> = ({
@@ -67,8 +68,10 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
   onSaveAiSettings,
   onApplyWorkouts,
   savedAssessment,
-  onSaveAssessment
+  onSaveAssessment,
+  onOpenWorkoutChat
 }) => {
+
   if (!isOpen) return null;
 
   const [activeTab, setActiveTab] = useState<'assessment' | 'workout_creator'>(initialTab);
@@ -379,7 +382,14 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('workout_creator')}
+            onClick={() => {
+              if (onOpenWorkoutChat) {
+                onClose();
+                onOpenWorkoutChat();
+              } else {
+                setActiveTab('workout_creator');
+              }
+            }}
             className={`py-2.5 rounded-xl flex items-center justify-center gap-2 transition ${
               activeTab === 'workout_creator'
                 ? 'bg-mint-500 text-slate-950 shadow-mint-glow-sm font-black'
@@ -387,8 +397,9 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
             }`}
           >
             <Dumbbell className="w-4 h-4" />
-            <span>Montar / Ajustar Rotina</span>
+            <span>Montar com Chat IA</span>
           </button>
+
         </div>
 
         {/* Banner de Configuração de Chave Gemini e Modelo */}
@@ -736,6 +747,27 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
           {/* ======================================================== */}
           {activeTab === 'workout_creator' && (
             <div className="space-y-4">
+              
+              {/* Atalho para tela completa de Chat */}
+              {onOpenWorkoutChat && (
+                <div className="p-3 bg-gradient-to-r from-cyan-500/15 to-mint-500/15 border border-cyan-500/30 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-cyan-200">
+                    <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+                    <span>Converse interativamente com a IA e vá ajustando os treinos em tela cheia!</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenWorkoutChat();
+                    }}
+                    className="px-3.5 py-1.5 bg-cyan-500 text-slate-950 font-black rounded-xl hover:bg-cyan-400 transition text-[11px] shrink-0 shadow-sm active:scale-95"
+                  >
+                    Abrir Chat Completo
+                  </button>
+                </div>
+              )}
+
               
               {/* Seletor de Modo: Nova Rotina vs Ajustar Rotina */}
               <div className="grid grid-cols-2 p-1 bg-dark-surface rounded-2xl border border-dark-border text-xs font-bold">
