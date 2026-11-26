@@ -78,7 +78,7 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
 
   // Chave da IA
   const [apiKeyInput, setApiKeyInput] = useState(aiSettings.apiKey || '');
-  const [modelInput, setModelInput] = useState(aiSettings.model || 'gemini-3.8-flash');
+  const [modelInput, setModelInput] = useState(aiSettings.model || 'gemini-4-hydrogen');
   const [showKeyForm, setShowKeyForm] = useState(!aiSettings.apiKey);
 
   // Estado da Avaliação Semanal
@@ -123,7 +123,7 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
     const updated = {
       ...aiSettings,
       apiKey: apiKeyInput.trim(),
-      model: modelInput.trim() || 'gemini-3.8-flash',
+      model: modelInput.trim() || 'gemini-4-hydrogen',
       provider: 'gemini' as const
     };
     onSaveAiSettings(updated);
@@ -162,7 +162,7 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
         goals,
         recovery,
         apiKey: key,
-        model: aiSettings.model || 'gemini-3.8-flash'
+        model: aiSettings.model || 'gemini-4-hydrogen'
       });
 
       setAssessment(result);
@@ -246,7 +246,7 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
         currentWorkout: targetW,
         existingWorkouts: workouts,
         apiKey: key,
-        model: aiSettings.model || 'gemini-3.8-flash'
+        model: aiSettings.model || 'gemini-4-hydrogen'
       });
 
       setGeneratedResult(result);
@@ -436,23 +436,36 @@ export const AiCoachModal: React.FC<AiCoachModalProps> = ({
                 <label className="text-[11px] font-semibold text-slate-300">
                   Modelo selecionado
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setModelInput('gemini-3.8-flash')}
-                  className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
-                    modelInput === 'gemini-3.8-flash'
-                      ? 'border-mint-500 text-mint-400 bg-mint-500/10 font-bold'
-                      : 'border-dark-border text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  3.8 Flash (Recomendado)
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setModelInput('gemini-4-hydrogen')}
+                    className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                      modelInput === 'gemini-4-hydrogen'
+                        ? 'border-mint-500 text-mint-400 bg-mint-500/10 font-bold'
+                        : 'border-dark-border text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    4 Hydrogen (Recomendado)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModelInput('gemini-3.8-flash')}
+                    className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                      modelInput === 'gemini-3.8-flash'
+                        ? 'border-mint-500 text-mint-400 bg-mint-500/10 font-bold'
+                        : 'border-dark-border text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    3.8 Flash
+                  </button>
+                </div>
               </div>
               <input
                 type="text"
                 value={modelInput}
                 onChange={(e) => setModelInput(e.target.value)}
-                placeholder="gemini-3.8-flash"
+                placeholder="gemini-4-hydrogen"
                 className="w-full bg-dark-bg/60 border border-dark-border rounded-xl px-3 py-1.5 text-xs font-mono text-slate-300 focus:outline-none focus:border-mint-500/50"
               />
             </div>

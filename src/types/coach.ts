@@ -77,5 +77,16 @@ export interface WorkoutCoachChatMessage {
   timestamp: string;
   workouts?: AiWorkoutPlanItem[];
   isFullRoutine?: boolean;
+  isWeeklyContext?: boolean;
+}
+
+export interface WorkoutChatConversation {
+  id: string;
+  title: string;
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+  messages: WorkoutCoachChatMessage[];
+  draftWorkouts?: AiWorkoutPlanItem[] | null;
+  weeklyContextSnapshot?: string;
 }
 

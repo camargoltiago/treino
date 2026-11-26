@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, Camera, Edit3, Sparkles, Loader2, Plus, Trash2, 
-  Check, AlertTriangle, Key, Flame, RefreshCw, Mic, MicOff, Search, History
+  Check, AlertTriangle, Key, Flame, RefreshCw, Mic, MicOff, Search, History, Star
 } from 'lucide-react';
 import { MealLog, MealType, FoodItem, AiNutritionSettings, MEAL_TYPE_LABELS, MEAL_TYPE_EMOJIS, getMealTypeByCurrentTime } from '../types';
 import { compressImageToBase64 } from '../services/imageCompression';
 import { GeminiNutritionService, NutritionAiAnalysisResult } from '../services/gemini';
 import { SpeechService } from '../services/speech';
-import { FoodLibraryService } from '../services/foodLibrary';
+import { FoodLibraryService, normalizeFoodText } from '../services/foodLibrary';
+import { StorageService } from '../services/storage';
 import { feedback } from '../services/feedback';
 
 interface AddMealModalProps {
@@ -94,6 +95,10 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
   const [activeAutocompleteIdx, setActiveAutocompleteIdx] = useState<number | null>(null);
   const [autocompleteQuery, setAutocompleteQuery] = useState<string>('');
 
+  // Favoritos da Dieta
+  const [favoriteFoods, setFavoriteFoods] = useState<FoodItem[]>(() => StorageService.loadFavoriteFoods());
+  const [favoriteFilter, setFavoriteFilter] = useState<string>('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Verificar suporte a gravação de voz
@@ -104,6 +109,8 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
   // Sincronizar dados quando o modal abre ou quando editingMeal mudar
   useEffect(() => {
     if (!isOpen) return;
+    setFavoriteFoods(StorageService.loadFavoriteFoods());
+    setFavoriteFilter('');
 
     if (editingMeal) {
       setInputMode('manual');
@@ -261,7 +268,7 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
         base64Image: imageBase64,
         description: textDescription.trim() || undefined,
         apiKey: settings.apiKey,
-        model: settings.model || 'gemini-3.8-flash',
+        model: settings.model || 'gemini-4-hydrogen',
         mealHint: MEAL_TYPE_LABELS[mealType]
       });
 
@@ -292,6 +299,60 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
         fat: preset?.fat ?? 2
       }
     ]);
+    if (preset?.name) {
+      feedback.success(`"${preset.name}" adicionado!`);
+    }
+  };
+
+  // Favoritar / Desfavoritar alimento
+  const isFavoriteFood = (name: string): boolean => {
+    const key = normalizeFoodText(name);
+    if (!key) return false;
+    return favoriteFoods.some((f) => normalizeFoodText(f.name) === key);
+  };
+
+  const toggleFavoriteFood = (food: FoodItem) => {
+    const cleanName = food.name.trim();
+    if (!cleanName) {
+      feedback.warning('Informe o nome do alimento para favoritar.');
+      return;
+    }
+    const key = normalizeFoodText(cleanName);
+    const exists = favoriteFoods.some((f) => normalizeFoodText(f.name) === key);
+
+    let updated: FoodItem[];
+    if (exists) {
+      updated = favoriteFoods.filter((f) => normalizeFoodText(f.name) !== key);
+      feedback.info(`"${cleanName}" removido dos favoritos.`);
+    } else {
+      const normalizedItem: FoodItem = {
+        name: cleanName,
+        portion: (food.portion || '1 porção').trim(),
+        calories: Math.max(0, Math.round(Number(food.calories) || 0)),
+        protein: Math.max(0, Math.round(Number(food.protein) || 0)),
+        carbs: Math.max(0, Math.round(Number(food.carbs) || 0)),
+        fat: Math.max(0, Math.round(Number(food.fat) || 0))
+      };
+      updated = [normalizedItem, ...favoriteFoods];
+      feedback.success(`"${cleanName}" salvo nos favoritos ⭐`);
+    }
+    setFavoriteFoods(updated);
+    StorageService.saveFavoriteFoods(updated);
+  };
+
+  const handleSaveCustomToFavorites = () => {
+    if (!customFoodName.trim()) {
+      feedback.warning('Digite o nome do alimento antes de favoritar.');
+      return;
+    }
+    toggleFavoriteFood({
+      name: customFoodName.trim(),
+      portion: customPortion.trim() || '1 porção',
+      calories: Math.max(0, Number(customCalories) || 0),
+      protein: Math.max(0, Number(customProtein) || 0),
+      carbs: Math.max(0, Number(customCarbs) || 0),
+      fat: Math.max(0, Number(customFat) || 0)
+    });
   };
 
   const handleUpdateItem = (index: number, field: keyof FoodItem, value: any) => {
@@ -684,10 +745,77 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
           )}
 
           {/* ============================================================== */}
-          {/* MODO MANUAL: DIGITAR ALIMENTO, ATALHOS FREQUENTES E AUTOCOMPLETE */}
+          {/* MODO MANUAL: FAVORITOS, DIGITAR ALIMENTO E ATALHOS FREQUENTES */}
           {/* ============================================================== */}
           {inputMode === 'manual' && (
             <div className="space-y-4">
+              {/* MEUS FAVORITOS DA DIETA (ACESSO RÁPIDO COM 1 TOQUE) */}
+              <div className="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/25 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    Meus Favoritos ({favoriteFoods.length})
+                  </span>
+                  <span className="text-[10px] text-amber-200/70">Toque para adicionar</span>
+                </div>
+
+                {favoriteFoods.length === 0 ? (
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Nenhum favorito salvo ainda. Toque na <Star className="w-3 h-3 inline text-amber-400" /> ao digitar um alimento abaixo ou em qualquer item da refeição para deixar aqui com 1 toque!
+                  </p>
+                ) : (
+                  <>
+                    {favoriteFoods.length > 5 && (
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" />
+                        <input
+                          type="text"
+                          value={favoriteFilter}
+                          onChange={(e) => setFavoriteFilter(e.target.value)}
+                          placeholder="Filtrar favoritos..."
+                          className="w-full bg-dark-bg/80 border border-dark-border rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-0.5 scrollbar-thin">
+                      {favoriteFoods
+                        .filter((fav) =>
+                          !favoriteFilter.trim() ||
+                          normalizeFoodText(fav.name).includes(normalizeFoodText(favoriteFilter))
+                        )
+                        .map((fav, idx) => (
+                          <div
+                            key={`${fav.name}_${idx}`}
+                            className="inline-flex items-center rounded-xl bg-dark-card border border-amber-500/30 hover:border-amber-400/60 overflow-hidden transition-all"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleAddItem(fav)}
+                              className="text-xs px-2.5 py-1.5 hover:bg-amber-500/10 text-slate-200 hover:text-amber-300 flex items-center gap-1.5 active:scale-95 transition-colors"
+                              title={`Adicionar ${fav.name} (${fav.portion})`}
+                            >
+                              <Plus className="w-3 h-3 text-amber-400 shrink-0" />
+                              <span className="font-semibold">{fav.name}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {fav.calories}kcal • {fav.protein}P
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleFavoriteFood(fav)}
+                              className="px-1.5 py-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 border-l border-dark-border transition-colors"
+                              title="Remover dos favoritos"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
               {/* FORMULÁRIO DEDICADO: DIGITAR QUALQUER ALIMENTO COM AUTOCOMPLETE */}
               <div className="p-4 rounded-2xl bg-dark-bg/80 border border-dark-border space-y-3 relative shadow-lg">
                 <div className="flex items-center justify-between">
@@ -828,16 +956,32 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
                   </div>
                 </div>
 
-                {/* Botão de Adicionar Alimento */}
-                <button
-                  type="button"
-                  onClick={handleAddCustomFood}
-                  disabled={!customFoodName.trim()}
-                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-mint-500 hover:bg-mint-400 text-dark-bg shadow-mint-glow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed active:scale-98"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Adicionar este Alimento à Refeição</span>
-                </button>
+                {/* Botões de Adicionar Alimento e Favoritar */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAddCustomFood}
+                    disabled={!customFoodName.trim()}
+                    className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-mint-500 hover:bg-mint-400 text-dark-bg shadow-mint-glow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed active:scale-98"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Adicionar à Refeição</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveCustomToFavorites}
+                    disabled={!customFoodName.trim()}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 ${
+                      isFavoriteFood(customFoodName)
+                        ? 'bg-amber-500/20 border-amber-400 text-amber-300'
+                        : 'bg-dark-card hover:bg-amber-500/10 border-dark-border hover:border-amber-400/50 text-slate-300 hover:text-amber-300'
+                    }`}
+                    title={isFavoriteFood(customFoodName) ? 'Remover dos favoritos' : 'Salvar nos favoritos'}
+                  >
+                    <Star className={`w-4 h-4 ${isFavoriteFood(customFoodName) ? 'fill-amber-400 text-amber-400' : ''}`} />
+                    <span className="hidden sm:inline">Favorito</span>
+                  </button>
+                </div>
               </div>
 
               {/* CHIPS DE ALIMENTOS FREQUENTES (ATALHOS RÁPIDOS) */}
@@ -850,18 +994,35 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
-                  {frequentFoods.map((food, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleAddItem(food)}
-                      className="text-xs px-2.5 py-1.5 rounded-xl bg-dark-card hover:bg-mint-500/15 border border-dark-border hover:border-mint-500/40 text-slate-300 hover:text-mint-400 transition-all flex items-center gap-1 active:scale-95"
-                    >
-                      <Plus className="w-3 h-3 text-mint-400" />
-                      <span>{food.name}</span>
-                      <span className="text-[10px] text-slate-500 font-mono">({food.calories} kcal)</span>
-                    </button>
-                  ))}
+                  {frequentFoods.map((food, idx) => {
+                    const faved = isFavoriteFood(food.name);
+                    return (
+                      <div
+                        key={idx}
+                        className="inline-flex items-center rounded-xl bg-dark-card border border-dark-border hover:border-mint-500/40 overflow-hidden transition-all"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleAddItem(food)}
+                          className="text-xs px-2.5 py-1.5 hover:bg-mint-500/15 text-slate-300 hover:text-mint-400 transition-all flex items-center gap-1 active:scale-95"
+                        >
+                          <Plus className="w-3 h-3 text-mint-400" />
+                          <span>{food.name}</span>
+                          <span className="text-[10px] text-slate-500 font-mono">({food.calories} kcal)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleFavoriteFood(food)}
+                          className={`px-1.5 py-1.5 border-l border-dark-border transition-colors ${
+                            faved ? 'text-amber-400 bg-amber-500/10' : 'text-slate-500 hover:text-amber-400'
+                          }`}
+                          title={faved ? 'Remover dos favoritos' : 'Salvar nos favoritos'}
+                        >
+                          <Star className={`w-3 h-3 ${faved ? 'fill-amber-400' : ''}`} />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1025,6 +1186,19 @@ export const AddMealModal: React.FC<AddMealModalProps> = ({
                         placeholder="Porção (ex: 50g)"
                         className="w-24 bg-transparent border-b border-dark-border pb-1 text-xs text-slate-400 text-right focus:outline-none focus:border-mint-500"
                       />
+
+                      <button
+                        type="button"
+                        onClick={() => toggleFavoriteFood(item)}
+                        className={`p-1 transition-colors ${
+                          isFavoriteFood(item.name)
+                            ? 'text-amber-400 hover:text-amber-300'
+                            : 'text-slate-500 hover:text-amber-400'
+                        }`}
+                        title={isFavoriteFood(item.name) ? 'Remover dos favoritos' : 'Salvar nos favoritos'}
+                      >
+                        <Star className={`w-3.5 h-3.5 ${isFavoriteFood(item.name) ? 'fill-amber-400' : ''}`} />
+                      </button>
 
                       <button
                         type="button"

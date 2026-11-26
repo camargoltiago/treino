@@ -11,7 +11,7 @@ import {
   AiWorkoutPlanItem
 } from '../types';
 
-const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-4-hydrogen';
 
 /**
  * Extrai e sanitiza JSON retornado pelo Gemini
@@ -196,6 +196,121 @@ export function calculateWeekFactualStats(
     waterGoalHitDays,
     daysLoggedNutrition
   };
+}
+
+/**
+ * Monta um resumo estruturado dos últimos 7 dias de Dieta + Treino + Recuperação
+ * para enviar à IA em uma nova conversa ou como contexto inteligente.
+ */
+export function buildWeeklyDietAndWorkoutContext(params: {
+  history: WorkoutSession[];
+  meals: MealLog[];
+  waterLogs: Record<string, number>;
+  goals: NutritionGoals;
+  recovery?: Record<MuscleGroup, MuscleRecoveryStatus>;
+  daysCount?: number;
+}): {
+  promptContext: string;
+  userSummaryText: string;
+  stats: WeeklyAssessmentStats;
+} {
+  const { history, meals, waterLogs, goals, recovery, daysCount = 7 } = params;
+  const stats = calculateWeekFactualStats(history, meals, waterLogs, goals, daysCount);
+
+  const now = new Date();
+  const startTime = new Date(now.getTime() - daysCount * 24 * 60 * 60 * 1000);
+  const startIsoDate = startTime.toISOString().split('T')[0];
+
+  const weekSessions = history
+    .filter((s) => new Date(s.startedAt) >= startTime && s.status === 'concluido')
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+
+  const sessionsDetail =
+    weekSessions.length > 0
+      ? weekSessions
+          .map((s) => {
+            const dateStr = new Date(s.startedAt).toLocaleDateString('pt-BR', {
+              weekday: 'short',
+              day: '2-digit',
+              month: '2-digit'
+            });
+            const exSummary = s.exercises
+              .map((ex) => {
+                const doneSets = ex.sets.filter((st) => st.completed);
+                if (doneSets.length === 0) return null;
+                const maxKg = Math.max(...doneSets.map((st) => Number(st.weightKg) || 0));
+                const avgReps = Math.round(
+                  doneSets.reduce((acc, st) => acc + (Number(st.reps) || 0), 0) / doneSets.length
+                );
+                return `${ex.name}: ${doneSets.length}x${avgReps}${maxKg > 0 ? ` (${maxKg}kg)` : ''}`;
+              })
+              .filter(Boolean)
+              .join('; ');
+            return `- ${dateStr} | ${s.workoutId} (~${Math.round((s.durationSeconds || 0) / 60)}min, ${Math.round(s.totalVolumeKg || 0)}kg vol) -> ${exSummary || 'sem séries registradas'}`;
+          })
+          .join('\n')
+      : '- Nenhum treino concluído nos últimos 7 dias.';
+
+  const weekMeals = meals.filter((m) => m.date >= startIsoDate);
+  const mealsByDay: Record<string, { cal: number; prot: number; carbs: number; fat: number; names: string[] }> = {};
+  weekMeals.forEach((m) => {
+    if (!mealsByDay[m.date]) {
+      mealsByDay[m.date] = { cal: 0, prot: 0, carbs: 0, fat: 0, names: [] };
+    }
+    mealsByDay[m.date].cal += m.totalCalories;
+    mealsByDay[m.date].prot += m.totalProtein;
+    mealsByDay[m.date].carbs += m.totalCarbs;
+    mealsByDay[m.date].fat += m.totalFat;
+    mealsByDay[m.date].names.push(m.name);
+  });
+
+  const dietDaysDetail =
+    Object.keys(mealsByDay).length > 0
+      ? Object.entries(mealsByDay)
+          .sort(([a], [b]) => b.localeCompare(a))
+          .map(([date, d]) => {
+            const water = waterLogs[date] || 0;
+            return `- ${date}: ${Math.round(d.cal)} kcal | P: ${Math.round(d.prot)}g | C: ${Math.round(d.carbs)}g | G: ${Math.round(d.fat)}g | Água: ${water}ml (${d.names.slice(0, 4).join(', ')})`;
+          })
+          .join('\n')
+      : '- Nenhuma refeição registrada nos últimos 7 dias.';
+
+  const recoverySummary = recovery
+    ? Object.values(recovery)
+        .map((r) => `${r.label}: ${r.percent}% (${r.status})`)
+        .join(' | ')
+    : 'Não informado';
+
+  const calTrend =
+    stats.averageDailyCalories === 0
+      ? 'sem registros'
+      : stats.calorieGoalDiff < -100
+      ? `déficit de ${Math.abs(stats.calorieGoalDiff)} kcal/dia`
+      : stats.calorieGoalDiff > 100
+      ? `superávit de +${stats.calorieGoalDiff} kcal/dia`
+      : 'em manutenção (na meta)';
+
+  const promptContext = `DADOS REAIS DOS ÚLTIMOS ${daysCount} DIAS DO USUÁRIO:
+[RESUMO TREINO]
+- Treinos concluídos: ${stats.totalWorkouts} | Séries totais: ${stats.totalSets} | Volume total: ${stats.totalVolumeKg} kg | Tempo total: ${stats.totalDurationMinutes} min
+- Sessões recentes:
+${sessionsDetail}
+- Recuperação muscular atual: ${recoverySummary}
+
+[RESUMO DIETA & HIDRATAÇÃO]
+- Metas diárias: ${goals.calories} kcal | ${goals.protein}g P | ${goals.carbs}g C | ${goals.fat}g G | ${goals.waterMl}ml água
+- Média real (${stats.daysLoggedNutrition} dias registrados): ${stats.averageDailyCalories} kcal/dia (${calTrend}) | Proteína: ${stats.averageDailyProtein}g/dia | Carbo: ${stats.averageDailyCarbs}g/dia | Gordura: ${stats.averageDailyFat}g/dia | Água: ${stats.averageDailyWaterMl}ml/dia
+- Dias detalhados:
+${dietDaysDetail}`;
+
+  const userSummaryText =
+    `📊 **Últimos ${daysCount} dias (Dieta + Treino)**\n` +
+    `• **Treinos:** ${stats.totalWorkouts} sessões • ${stats.totalSets} séries • ${stats.totalVolumeKg.toLocaleString('pt-BR')} kg de volume\n` +
+    `• **Dieta (${stats.daysLoggedNutrition}d):** ~${stats.averageDailyCalories} kcal/dia (${calTrend}) • ${stats.averageDailyProtein}g P • ${stats.averageDailyCarbs}g C • ${stats.averageDailyFat}g G\n` +
+    `• **Água:** ~${stats.averageDailyWaterMl} ml/dia\n\n` +
+    `Analise minha semana acima e me dê recomendações práticas para evoluir meus treinos e resultados. Se fizer sentido, sugira ajustes na minha rotina!`;
+
+  return { promptContext, userSummaryText, stats };
 }
 
 export const CoachAiService = {
@@ -556,6 +671,12 @@ Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
     currentWorkouts?: AiWorkoutPlanItem[] | null;
     targetWorkout?: WorkoutPlan | null;
     existingWorkouts?: Record<string, WorkoutPlan>;
+    history?: WorkoutSession[];
+    meals?: MealLog[];
+    waterLogs?: Record<string, number>;
+    goals?: NutritionGoals;
+    recovery?: Record<MuscleGroup, MuscleRecoveryStatus>;
+    weeklyContextSnapshot?: string;
     apiKey: string;
     model?: string;
   }): Promise<{
@@ -569,6 +690,12 @@ Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
       currentWorkouts,
       targetWorkout,
       existingWorkouts = {},
+      history = [],
+      meals = [],
+      waterLogs = {},
+      goals,
+      recovery,
+      weeklyContextSnapshot,
       apiKey,
       model = DEFAULT_GEMINI_MODEL
     } = params;
@@ -586,27 +713,51 @@ Retorne ESTRITAMENTE um objeto JSON com a seguinte estrutura:
     if (currentWorkouts && currentWorkouts.length > 0) {
       contextWorkoutsDesc = `\nTREINO(S) ATUALMENTE MONTADO(S) NESTA CONVERSA:\n` +
         currentWorkouts.map(w => {
-          const exs = w.exercises.map(e => `  - ${e.name} (${e.sets} séries x ${e.reps} reps, descanso: ${e.restSeconds}s, grupo: ${e.muscleGroup}${e.notes ? ', obs: ' + e.notes : ''})`).join('\n');
+          const exs = w.exercises.map(e => `  - ${e.name} (${e.sets} séries x ${e.reps} reps, descanso: ${e.restSeconds}s, carga: ${e.targetLoadKg ?? '?'}kg, grupo: ${e.muscleGroup}${e.notes ? ', obs: ' + e.notes : ''})`).join('\n');
           return `[Treino ${w.code} - ${w.title} | Foco: ${w.focus} | ~${w.estimatedMinutes}min]\n${exs}`;
         }).join('\n\n');
     } else if (targetWorkout) {
-      const exs = targetWorkout.exercises.map(e => `  - ${e.name} (${e.sets} séries x ${e.reps} reps, descanso: ${e.restSeconds}s, grupo: ${e.muscleGroup}${e.notes ? ', obs: ' + e.notes : ''})`).join('\n');
+      const exs = targetWorkout.exercises.map(e => `  - ${e.name} (${e.sets} séries x ${e.reps} reps, descanso: ${e.restSeconds}s, carga: ${e.targetLoadKg ?? '?'}kg, grupo: ${e.muscleGroup}${e.notes ? ', obs: ' + e.notes : ''})`).join('\n');
       contextWorkoutsDesc = `\nTREINO ATUAL QUE O USUÁRIO DESEJA AJUSTAR:\n[Treino ${targetWorkout.code} - ${targetWorkout.title} | Foco: ${targetWorkout.focus}]\n${exs}`;
     }
 
-    // Treinos que o usuário já tem salvos no app
-    const existingTitles = Object.values(existingWorkouts).map(w => `${w.code}: ${w.title}`).join(', ') || 'Nenhum';
+    // Treinos que o usuário já tem salvos no app (com resumo dos exercícios para a IA ser mais inteligente)
+    const existingList = Object.values(existingWorkouts);
+    const existingDetails = existingList.length > 0
+      ? existingList
+          .map((w) => {
+            const exs = w.exercises.map((e) => `${e.name} (${e.sets}x${e.reps}${e.targetLoadKg ? ` @${e.targetLoadKg}kg` : ''})`).join(', ');
+            return `- Treino ${w.code} (${w.title}): ${exs}`;
+          })
+          .join('\n')
+      : 'Nenhum treino salvo ainda.';
 
-    // Histórico de mensagens anteriores (últimas 8 para manter foco e agilidade)
-    const recentHistory = chatHistory.slice(-8);
+    // Contexto semanal (Dieta + Treino + Recuperação)
+    let weeklyContextBlock = '';
+    if (weeklyContextSnapshot && weeklyContextSnapshot.trim()) {
+      weeklyContextBlock = `\n${weeklyContextSnapshot.trim()}`;
+    } else if (goals && (history.length > 0 || meals.length > 0)) {
+      const built = buildWeeklyDietAndWorkoutContext({
+        history,
+        meals,
+        waterLogs,
+        goals,
+        recovery,
+        daysCount: 7
+      });
+      weeklyContextBlock = `\n${built.promptContext}`;
+    }
+
+    // Histórico de mensagens anteriores (últimas 10 para manter coerência)
+    const recentHistory = chatHistory.slice(-10);
     let historyFormatted = '';
     if (recentHistory.length > 0) {
       historyFormatted = `\nHISTÓRICO RECENTE DA CONVERSA:\n` +
         recentHistory.map(m => `${m.role === 'user' ? 'USUÁRIO' : 'TREINADOR IA'}: ${m.content}`).join('\n');
     }
 
-    const systemPrompt = `Você é o Treinador Mestre de musculação e periodização de hipertrofia do app MuscleTrack.
-Você está conversando diretamente com o usuário em um chat interativo para montar ou refinar fichas de treino.
+    const systemPrompt = `Você é o Treinador Mestre de musculação, biomecânica e periodização de hipertrofia do app MuscleTrack.
+Você está conversando diretamente com o usuário em um chat interativo para analisar sua semana (dieta + treino) e montar ou refinar fichas de treino inteligentes.
 
 GRUPOS MUSCULARES VÁLIDOS (muscleGroup DEVE ser estritamente um destes):
 - "chest" (Peitoral)
@@ -618,16 +769,18 @@ GRUPOS MUSCULARES VÁLIDOS (muscleGroup DEVE ser estritamente um destes):
 - "calves" (Panturrilhas)
 - "abs" (Abdômen / Core)
 
-DIRETRIZES TÉCNICAS E DE DIÁLOGO:
-1. Responda em tom profissional, motivador, empático e focado em hipertrofia e biomecânica segura.
-2. Cada treino deve conter de 4 a 7 exercícios equilibrados (volume médio de 14 a 22 séries totais por treino).
-3. Ao ajustar treinos (ex: "troque supino inclinado por halteres", "adicione panturrilha", "remova 1 de tríceps", "diminua o tempo para 40min", "aumente o descanso para 2 minutos"), mantenha toda a estrutura anterior e altere apenas o solicitado pelo usuário.
-4. Se o usuário estiver pedindo uma nova rotina completa (ex: ABC, ABCD, Push/Pull/Legs, Upper/Lower), estruture todos os dias no array "workouts".
-5. Se for um ajuste em 1 treino específico, preserve o código e estrutura.
-6. IMPORTANTE: Sempre retorne o array "workouts" COMPLETO e ATUALIZADO com todos os exercícios da rotina/treino vigente.
-7. Em "replyText", dê uma resposta conversacional amigável, clara e concisa (1 a 3 parágrafos curtos) explicando o que alterou, a lógica do ajuste e dicas práticas de treino.
+DIRETRIZES DE INTELIGÊNCIA DE TREINO E PERIODIZAÇÃO:
+1. Responda em tom profissional, direto, motivador e embasado em fisiologia e biomecânica.
+2. Ordem biomecânica inteligente: coloque exercícios multiarticulares/compostos pesados primeiro (ex: Supino, Agachamento, Remada, Desenvolvimento) e isoladores depois. Evite redundância excessiva no mesmo padrão de movimento.
+3. Volume e descanso coerentes: cada treino deve ter de 4 a 7 exercícios (14 a 22 séries totais). Compostos pesados: 90–150s de descanso; isoladores: 45–75s.
+4. Calibração de carga e dieta: se houver histórico recente com cargas usadas, sugira "targetLoadKg" realista (e "isDumbbell": true quando for halteres). Se o usuário estiver em déficit calórico ou com músculos fatigados, controle o volume excessivo e priorize qualidade/intensidade.
+5. Ao ajustar treinos existentes na conversa, preserve toda a estrutura anterior e altere apenas o solicitado pelo usuário, retornando o array "workouts" COMPLETO e ATUALIZADO.
+6. Se o usuário estiver apenas pedindo uma análise (ex: analisar a última semana de dieta e treino) ou tirando uma dúvida sem pedir um treino novo ainda, você pode retornar "workouts": [] (ou manter o treino em discussão se já houver um) e focar em uma resposta rica e acionável em "replyText".
+7. Em "replyText", seja claro, organizado (use tópicos curtos quando útil) e explique o porquê das escolhas (volume, divisão, adaptação à dieta/recuperação).
 
-Treinos salvos no app do usuário: ${existingTitles}
+TREINOS ATUALMENTE SALVOS NO APP:
+${existingDetails}
+${weeklyContextBlock}
 ${contextWorkoutsDesc}
 ${historyFormatted}
 
@@ -636,14 +789,14 @@ NOVA MENSAGEM DO USUÁRIO:
 
 RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO com a seguinte estrutura:
 {
-  "replyText": "Explicação amigável em linguagem natural sobre o treino ou ajuste realizado.",
+  "replyText": "Explicação amigável e técnica sobre a análise, treino ou ajuste realizado.",
   "isFullRoutine": true,
   "workouts": [
     {
       "code": "A",
       "title": "Treino A — Peito e Tríceps",
       "shortTitle": "Peito & Tríceps",
-      "focus": "Foco em peitoral e deltoide anterior com ênfase em sobrecarga progressiva",
+      "focus": "Foco em peitoral e deltoide anterior com sobrecarga progressiva",
       "dayLabel": "Segunda-feira",
       "estimatedMinutes": 50,
       "exercises": [
@@ -651,9 +804,9 @@ RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO com a seguinte estrutura:
           "name": "Supino Reto com Barra",
           "muscleGroup": "chest",
           "sets": 4,
-          "reps": "8–10",
-          "restSeconds": 90,
-          "notes": "Cadência controlada na descida",
+          "reps": "6–8",
+          "restSeconds": 120,
+          "notes": "Escápulas retraídas, descida controlada (2s), RIR 1-2",
           "targetLoadKg": 25,
           "isDumbbell": false
         }
@@ -705,11 +858,7 @@ RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO com a seguinte estrutura:
       rawWorkouts = currentWorkouts;
     }
 
-    if (rawWorkouts.length === 0) {
-      throw new Error('A IA não gerou ou não encontrou nenhum treino na conversa. Tente reformular seu pedido.');
-    }
-
-    const normalizedWorkouts = normalizeRawWorkouts(rawWorkouts);
+    const normalizedWorkouts = rawWorkouts.length > 0 ? normalizeRawWorkouts(rawWorkouts) : [];
 
     return {
       replyText: String(parsed.replyText || parsed.message || 'Treino atualizado conforme conversamos!'),

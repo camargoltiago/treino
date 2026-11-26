@@ -99,7 +99,7 @@ export interface WaterLog {
 
 export interface AiNutritionSettings {
   apiKey: string;
-  model: string; // ex: 'gemini-3.8-flash'
+  model: string; // ex: 'gemini-4-hydrogen'
   provider?: 'gemini' | 'deepseek';
 }
 

@@ -163,7 +163,7 @@ export const App: React.FC = () => {
       if (ai && typeof ai === 'object') {
         const normalizedAi: AiNutritionSettings = {
           apiKey: ai.apiKey || '',
-          model: ai.model || 'gemini-3.8-flash',
+          model: ai.model || 'gemini-4-hydrogen',
           provider: 'gemini'
         };
         setAiSettings(normalizedAi);
@@ -864,6 +864,11 @@ export const App: React.FC = () => {
             setAiWorkoutChatTargetId(null);
           }}
           workouts={workouts}
+          history={history}
+          meals={meals}
+          waterLogs={waterLogs}
+          goals={goals}
+          recovery={recoveryData.muscles}
           initialTargetWorkoutId={aiWorkoutChatTargetId}
           aiSettings={aiSettings}
           onSaveAiSettings={(newAi) => {

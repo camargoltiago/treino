@@ -1,4 +1,4 @@
-import { WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings, DeepSeekSettings, WeeklyAssessment, WorkoutCoachChatMessage } from '../types';
+import { WorkoutSession, TimerState, WorkoutPlan, MealLog, NutritionGoals, AiNutritionSettings, DeepSeekSettings, WeeklyAssessment, WorkoutCoachChatMessage, WorkoutChatConversation, FoodItem } from '../types';
 import { WORKOUTS_DATA } from '../data/workouts';
 
 export const STORAGE_KEY = 'meu_treino_hibrido_v2';
@@ -11,6 +11,8 @@ export const DEEPSEEK_SETTINGS_KEY = 'meu_treino_deepseek_settings';
 export const WATER_STORAGE_KEY = 'meu_treino_water_v2';
 export const COACH_ASSESSMENT_KEY = 'meu_treino_coach_assessment_v1';
 export const WORKOUT_CHAT_HISTORY_KEY = 'meu_treino_workout_chat_history_v1';
+export const WORKOUT_CHAT_CONVERSATIONS_KEY = 'meu_treino_workout_chat_conversations_v1';
+export const DIET_FAVORITES_KEY = 'meu_treino_diet_favorites_v1';
 
 
 export const DEFAULT_NUTRITION_GOALS: NutritionGoals = {
@@ -23,7 +25,7 @@ export const DEFAULT_NUTRITION_GOALS: NutritionGoals = {
 
 export const DEFAULT_AI_SETTINGS: AiNutritionSettings = {
   apiKey: '',
-  model: 'gemini-3.8-flash',
+  model: 'gemini-4-hydrogen',
   provider: 'gemini'
 };
 
@@ -180,8 +182,8 @@ export const StorageService = {
         const parsed = JSON.parse(rawAi);
         if (parsed && typeof parsed === 'object') {
           aiSettings = { ...DEFAULT_AI_SETTINGS, ...parsed };
-          if (!aiSettings.model || aiSettings.model === 'gemini-2.5-flash') {
-            aiSettings.model = 'gemini-3.8-flash';
+          if (!aiSettings.model || aiSettings.model === 'gemini-2.5-flash' || aiSettings.model === 'gemini-3.8-flash') {
+            aiSettings.model = 'gemini-4-hydrogen';
           }
           if (!aiSettings.provider) {
             aiSettings.provider = 'gemini';
@@ -344,6 +346,73 @@ export const StorageService = {
     try {
       localStorage.removeItem(WORKOUT_CHAT_HISTORY_KEY);
     } catch (e) {}
+  },
+
+  loadWorkoutChatConversations(): WorkoutChatConversation[] {
+    try {
+      const raw = localStorage.getItem(WORKOUT_CHAT_CONVERSATIONS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+
+      // Migrar histórico legado único para a primeira conversa
+      const legacy = this.loadWorkoutChatHistory();
+      if (legacy && legacy.length > 0) {
+        const now = new Date().toISOString();
+        let lastDraft: any = null;
+        for (let i = legacy.length - 1; i >= 0; i--) {
+          if (legacy[i].workouts && legacy[i].workouts!.length > 0) {
+            lastDraft = legacy[i].workouts;
+            break;
+          }
+        }
+        const migrated: WorkoutChatConversation[] = [
+          {
+            id: `conv_${Date.now()}`,
+            title: 'Conversa Principal',
+            createdAt: now,
+            updatedAt: now,
+            messages: legacy,
+            draftWorkouts: lastDraft
+          }
+        ];
+        this.saveWorkoutChatConversations(migrated);
+        return migrated;
+      }
+    } catch (e) {
+      console.error('Erro ao carregar conversas do Treinador IA:', e);
+    }
+    return [];
+  },
+
+  saveWorkoutChatConversations(conversations: WorkoutChatConversation[]): void {
+    try {
+      localStorage.setItem(WORKOUT_CHAT_CONVERSATIONS_KEY, JSON.stringify(conversations));
+    } catch (e) {
+      console.error('Erro ao salvar conversas do Treinador IA:', e);
+    }
+  },
+
+  loadFavoriteFoods(): FoodItem[] {
+    try {
+      const raw = localStorage.getItem(DIET_FAVORITES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error('Erro ao carregar favoritos da dieta:', e);
+    }
+    return [];
+  },
+
+  saveFavoriteFoods(favorites: FoodItem[]): void {
+    try {
+      localStorage.setItem(DIET_FAVORITES_KEY, JSON.stringify(favorites));
+    } catch (e) {
+      console.error('Erro ao salvar favoritos da dieta:', e);
+    }
   },
 
   clearAll() {

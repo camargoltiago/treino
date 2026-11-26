@@ -22,7 +22,7 @@ export const NutritionSettingsModal: React.FC<NutritionSettingsModalProps> = ({
   if (!isOpen) return null;
 
   const [apiKey, setApiKey] = useState(settings.apiKey || '');
-  const [model, setModel] = useState(settings.model || 'gemini-3.8-flash');
+  const [model, setModel] = useState(settings.model || 'gemini-4-hydrogen');
   const [showKey, setShowKey] = useState(false);
 
   // Metas nutricionais
@@ -63,7 +63,7 @@ export const NutritionSettingsModal: React.FC<NutritionSettingsModalProps> = ({
       {
         ...settings,
         apiKey: '',
-        model: model.trim() || 'gemini-3.8-flash',
+        model: model.trim() || 'gemini-4-hydrogen',
         provider: 'gemini'
       },
       goals
@@ -76,7 +76,7 @@ export const NutritionSettingsModal: React.FC<NutritionSettingsModalProps> = ({
       {
         ...settings,
         apiKey: apiKey.trim(),
-        model: model.trim() || 'gemini-3.8-flash',
+        model: model.trim() || 'gemini-4-hydrogen',
         provider: 'gemini'
       },
       {
@@ -202,6 +202,17 @@ export const NutritionSettingsModal: React.FC<NutritionSettingsModalProps> = ({
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
+                    onClick={() => setModel('gemini-4-hydrogen')}
+                    className={`text-[10px] px-2.5 py-1 rounded-lg border transition-all ${
+                      model === 'gemini-4-hydrogen'
+                        ? 'border-mint-500 text-mint-400 bg-mint-500/10 font-bold'
+                        : 'border-dark-border text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    4 Hydrogen (Padrão)
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setModel('gemini-3.8-flash')}
                     className={`text-[10px] px-2.5 py-1 rounded-lg border transition-all ${
                       model === 'gemini-3.8-flash'
@@ -209,7 +220,7 @@ export const NutritionSettingsModal: React.FC<NutritionSettingsModalProps> = ({
                         : 'border-dark-border text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    3.8 Flash (Padrão)
+                    3.8 Flash
                   </button>
                 </div>
               </div>
@@ -217,7 +228,7 @@ export const NutritionSettingsModal: React.FC<NutritionSettingsModalProps> = ({
                 type="text"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="gemini-3.8-flash"
+                placeholder="gemini-4-hydrogen"
                 className="w-full bg-dark-bg/60 border border-dark-border rounded-xl px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-mint-500/50"
               />
             </div>

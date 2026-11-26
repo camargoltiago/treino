@@ -39,7 +39,7 @@ export const NutritionView: React.FC<NutritionViewProps> = ({
 }) => {
   const currentAiSettings = aiSettings || deepseekSettings || {
     apiKey: '',
-    model: 'gemini-3.8-flash',
+    model: 'gemini-4-hydrogen',
     provider: 'gemini' as const
   };
   // Data selecionada (padrão: hoje em formato YYYY-MM-DD local)

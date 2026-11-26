@@ -10,7 +10,7 @@ export interface NutritionAiAnalysisResult {
   notes?: string;
 }
 
-const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-4-hydrogen';
 
 /**
  * Limpa e extrai um objeto JSON da resposta da IA, tratando blocos markdown ```json se existirem
